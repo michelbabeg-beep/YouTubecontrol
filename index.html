@@ -3,19 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>আমার সাবস্ক্রিপশন</title>
+<title>ফোকাস টিউব</title>
 <style>
-  :root{--bg:#0f0f12;--panel:#18181d;--panel2:#212128;--text:#f2f2f5;--muted:#9a9aa8;--accent:#ff3d3d;--line:#2b2b33}
+  :root{--bg:#0f0f12;--panel:#18181d;--panel2:#212128;--text:#f2f2f5;--muted:#9a9aa8;--accent:#ff3d3d;--ok:#32c46b;--line:#2b2b33}
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
   body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"Noto Sans Bengali","Segoe UI",sans-serif;line-height:1.5}
   button{font:inherit;cursor:pointer}
-  header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
-  header h1{font-size:18px;margin:0;flex:1}
+  input[type=text],input[type=number],input:not([type]){font:inherit}
+  header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;flex:1;white-space:nowrap}
   header h1 span{color:var(--accent)}
+  nav{display:flex;gap:4px}
+  nav button{background:none;border:0;color:var(--muted);padding:8px 12px;border-radius:8px;font-weight:600}
+  nav button.on{background:var(--panel2);color:var(--text)}
   .btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 16px;font-weight:600}
   .btn.ghost{background:var(--panel2);color:var(--text)}
+  .btn.ok{background:var(--ok);color:#06240f}
+  .btn.sm{padding:5px 10px;font-size:13px}
   .btn:disabled{opacity:.5;cursor:default}
-  #menuBtn{display:none}
+  .btn.ghost.on{background:var(--accent);color:#fff}
   .layout{display:flex;min-height:calc(100vh - 56px)}
   aside{width:270px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);padding:12px;overflow-y:auto;height:calc(100vh - 56px);position:sticky;top:56px}
   aside input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);margin-bottom:10px}
@@ -24,12 +31,21 @@
   .ch.active{background:var(--panel2);outline:1px solid var(--accent)}
   .ch img{width:28px;height:28px;border-radius:50%;flex-shrink:0}
   .ch span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
-  main{flex:1;padding:16px;min-width:0}
+  main,.page{flex:1;padding:16px;min-width:0}
+  .page{max-width:1100px;margin:0 auto}
+  .tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .tools input[type=text]{flex:1;min-width:160px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
-  .card{cursor:pointer;background:none;border:0;color:inherit;text-align:left;padding:0}
+  .card{cursor:pointer}
   .thumb{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:var(--panel2)}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
   .card:hover .thumb img{transform:scale(1.04)}
+  .dur{position:absolute;right:6px;bottom:8px;background:rgba(0,0,0,.8);font-size:12px;padding:1px 6px;border-radius:4px}
+  .addb{position:absolute;right:6px;top:6px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.7);color:#fff;font-size:17px;line-height:1}
+  .addb:hover{background:var(--accent)}
+  .addb.on{background:var(--ok);color:#06240f}
+  .pbar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.2)}
+  .pbar i{display:block;height:100%;background:var(--accent)}
   .card h3{font-size:14px;margin:8px 0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .card p{margin:0;font-size:12.5px;color:var(--muted)}
   .center{max-width:560px;margin:8vh auto;text-align:center;padding:0 16px}
@@ -37,32 +53,105 @@
   .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;text-align:left;margin-top:18px}
   .box input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);margin:8px 0 12px}
   .box ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px}
-  .box code{background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--text);word-break:break-all}
+  .box code,code{background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--text);word-break:break-all}
   .muted{color:var(--muted);font-size:13px}
-  .bar{height:4px;background:var(--panel2);border-radius:2px;overflow:hidden;margin-bottom:14px}
-  .bar div{height:100%;width:0;background:var(--accent);transition:width .2s}
+  .pad{padding:8px}
+  .bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+  #barWrap{height:4px;margin-bottom:14px}
+  #barWrap i{background:var(--accent)}
   .err{background:#3a1717;border:1px solid #7a2a2a;color:#ffb4b4;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14px}
-  #modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;z-index:50;align-items:center;justify-content:center;padding:16px}
-  #modal.open{display:flex}
-  .player{width:min(1000px,100%)}
-  .player .frame{aspect-ratio:16/9;width:100%;background:#000;border-radius:10px;overflow:hidden}
-  .player iframe{width:100%;height:100%;border:0}
-  .player .meta{display:flex;gap:12px;align-items:flex-start;margin-top:10px}
-  .player .meta div{flex:1}
-  .player h3{margin:0 0 2px;font-size:16px}
+  /* lists */
+  .pagehead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .pagehead h2{margin:0;flex:1;font-size:22px}
+  .lcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;cursor:pointer}
+  .lcard:hover{border-color:var(--accent)}
+  .lcard h3{margin:0 0 4px}
+  .lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .big{font-size:30px;font-weight:700}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:8px}
+  .vrow{display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px;background:var(--panel);margin-bottom:8px;cursor:pointer;border:1px solid transparent}
+  .vrow:hover{border-color:var(--line)}
+  .vrow.lock{opacity:.5}
+  .vrow .n{width:26px;text-align:center;color:var(--muted);flex-shrink:0}
+  .vrow .t{width:128px;flex-shrink:0;aspect-ratio:16/9;border-radius:6px;overflow:hidden;position:relative;background:var(--panel2)}
+  .vrow .t img{width:100%;height:100%;object-fit:cover}
+  .vrow .i{flex:1;min-width:0}
+  .vrow .i b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600}
+  .vrow .act{display:flex;gap:4px;flex-shrink:0}
+  .ib{background:var(--panel2);border:0;color:var(--text);width:30px;height:30px;border-radius:6px}
+  .ib:hover{background:#34343e}
+  .ib.done{background:var(--ok);color:#06240f}
+  /* stats */
+  .stgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .ring{width:110px;height:110px;border-radius:50%;display:grid;place-items:center;margin:6px 0}
+  .ring div{width:84px;height:84px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-weight:700}
+  .days{display:flex;gap:10px;align-items:flex-end;height:120px;margin-top:10px}
+  .days div{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+  .days i{display:block;background:var(--accent);border-radius:4px 4px 0 0;margin-bottom:4px;min-height:2px}
+  .heat{display:grid;grid-template-rows:repeat(7,14px);grid-auto-flow:column;grid-auto-columns:14px;gap:3px;overflow-x:auto;padding-bottom:6px}
+  .heat i{border-radius:3px;background:var(--panel2)}
+  .heat .l1{background:#3a2020}.heat .l2{background:#703030}.heat .l3{background:#b43a3a}.heat .l4{background:#ff4d4d}
+  /* dialog/toast */
+  #dlg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:120;display:flex;align-items:center;justify-content:center;padding:16px}
+  #dlgBox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(460px,100%);max-height:85vh;overflow-y:auto;position:relative}
+  #dlgBox h3{margin:0 0 6px}
+  #dlgBox .x{position:absolute;right:10px;top:10px}
+  #dlgBox input[type=text],#dlgBox input:not([type]){width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+  .rowf{display:flex;gap:8px;margin-top:12px}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2e2e38;border:1px solid var(--line);padding:10px 18px;border-radius:10px;z-index:200;display:none;max-width:90vw}
+  /* focus */
+  #focus{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column}
+  .ftop{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .ftitle{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pomo{display:flex;align-items:center;gap:6px;font-size:14px}
+  .pomo b{font-size:18px;font-variant-numeric:tabular-nums}
+  .fbody{flex:1;display:flex;min-height:0}
+  .fmain{flex:1;overflow-y:auto;padding:14px;min-width:0}
+  .fside{width:340px;flex-shrink:0;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:12px}
+  .pwrap{position:relative;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden;max-height:68vh;margin:0 auto}
+  .pwrap iframe,#ytp{width:100%;height:100%;border:0;display:block}
+  #endcard{position:absolute;inset:0;background:rgba(10,10,14,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px}
+  .fmeta h2{font-size:18px;margin:12px 0 2px}
+  .ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+  .noteadd{display:flex;gap:8px;margin:8px 0}
+  .noteadd input{flex:1;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+  .note{display:flex;gap:10px;align-items:flex-start;padding:7px 8px;border-radius:8px;background:var(--panel)}
+  .note+.note{margin-top:6px}
+  .note a{color:var(--accent);cursor:pointer;font-weight:600;white-space:nowrap}
+  .note span{flex:1;word-break:break-word}
+  .qi{display:flex;gap:10px;align-items:center;padding:6px;border-radius:8px;cursor:pointer;font-size:13px}
+  .qi:hover{background:var(--panel2)}
+  .qi.cur{background:var(--panel2);outline:1px solid var(--accent)}
+  .qi.lock{opacity:.45}
+  .qi img{width:84px;aspect-ratio:16/9;object-fit:cover;border-radius:5px;flex-shrink:0}
+  .qi div{flex:1;min-width:0}
+  .qi b{font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   @media (max-width:760px){
     #menuBtn{display:inline-block}
     aside{position:fixed;left:0;top:56px;z-index:30;transform:translateX(-100%);transition:transform .2s;height:calc(100vh - 56px)}
     aside.open{transform:none}
+    .fbody{flex-direction:column;overflow-y:auto}
+    .fside{width:100%;border-left:0;border-top:1px solid var(--line)}
+    .fmain{overflow:visible}
+    .vrow .t{width:96px}
+    .pomo #pomoMode{display:none}
   }
+  @media (min-width:761px){#menuBtn{display:none}}
 </style>
 </head>
 <body>
 <header>
-  <button class="btn ghost" id="menuBtn">☰</button>
-  <h1><span>▶</span> আমার সাবস্ক্রিপশন</h1>
-  <button class="btn ghost" id="refreshBtn" style="display:none">রিফ্রেশ</button>
-  <button class="btn ghost" id="signOutBtn" style="display:none">লগআউট</button>
+  <button class="btn ghost" id="menuBtn" data-act="menu" hidden>☰</button>
+  <h1><span>▶</span> ফোকাস টিউব</h1>
+  <nav id="nav" hidden>
+    <button data-act="nav" data-view="feed" class="on">ফিড</button>
+    <button data-act="nav" data-view="lists">ওয়াচলিস্ট</button>
+    <button data-act="nav" data-view="stats">স্ট্যাটস</button>
+  </nav>
+  <button class="btn ghost sm" data-act="refresh" id="refreshBtn" hidden>রিফ্রেশ</button>
+  <button class="btn ghost sm" data-act="signout" id="signOutBtn" hidden>লগআউট</button>
 </header>
 
 <div id="setup" class="center">
@@ -70,214 +159,577 @@
   <p class="muted">YouTube তোমার সাবস্ক্রিপশন লিস্ট শুধু তোমার নিজের অনুমতিতে দেয়, তাই একটা বিনামূল্যের Google Client ID লাগবে।</p>
   <div class="box">
     <ol>
-      <li><code>console.cloud.google.com</code> এ গিয়ে একটা নতুন প্রজেক্ট বানাও।</li>
-      <li>"APIs &amp; Services → Library" থেকে <b>YouTube Data API v3</b> Enable করো।</li>
-      <li>"OAuth consent screen" এ গিয়ে External সিলেক্ট করে সেটআপ করো, আর <b>Test users</b> এ তোমার নিজের Gmail যোগ করো।</li>
-      <li>"Credentials → Create credentials → OAuth client ID → Web application"।</li>
-      <li><b>Authorized JavaScript origins</b> এ এই সাইটের ঠিকানা দাও (যেমন <code id="origin"></code>)।</li>
+      <li><code>console.cloud.google.com</code> এ নতুন প্রজেক্ট বানাও।</li>
+      <li><b>YouTube Data API v3</b> Enable করো।</li>
+      <li>Google Auth Platform → Audience এ <b>Test users</b> এ নিজের Gmail যোগ করো।</li>
+      <li>Clients → Create client → Web application।</li>
+      <li><b>Authorized JavaScript origins</b> এ এই সাইটের ঠিকানা দাও: <code id="origin"></code></li>
       <li>যে Client ID পাবে সেটা নিচে বসাও।</li>
     </ol>
     <input id="clientId" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off">
-    <button class="btn" id="saveId">সেভ করো</button>
+    <button class="btn" data-act="saveId">সেভ করো</button>
   </div>
 </div>
 
-<div id="login" class="center" style="display:none">
-  <h2>তোমার সাবস্ক্রাইব করা চ্যানেলগুলোর ভিডিও</h2>
-  <p class="muted">অন্য কোনো রেকমেন্ডেশন নেই, শুধু যাদের সাবস্ক্রাইব করেছ তাদের ভিডিও।</p>
-  <button class="btn" id="signInBtn" style="margin-top:14px">Google দিয়ে লগইন</button>
-  <p><button class="btn ghost" id="changeId" style="margin-top:14px;font-size:13px">Client ID বদলাও</button></p>
+<div id="login" class="center" hidden>
+  <h2>শিখতে হবে মন দিয়ে, স্ক্রল করে নয়</h2>
+  <p class="muted">তোমার সাবস্ক্রাইব করা চ্যানেলের ভিডিও দিয়ে ওয়াচলিস্ট বানাও, ফোকাস মোডে দেখো, প্রোগ্রেস ট্র্যাক করো।</p>
+  <button class="btn" data-act="signin" style="margin-top:14px">Google দিয়ে লগইন</button>
+  <p><button class="btn ghost sm" data-act="changeId" style="margin-top:10px">Client ID বদলাও</button></p>
 </div>
 
-<div id="app" class="layout" style="display:none">
+<!-- ফিড -->
+<div id="vFeed" class="layout" hidden>
   <aside id="side">
     <input id="chSearch" placeholder="চ্যানেল খোঁজো…">
-    <button class="ch active" id="allBtn"><span>সব চ্যানেল</span></button>
+    <button class="ch active" id="allBtn" data-act="allCh"><span>সব চ্যানেল</span></button>
     <div id="chList"></div>
   </aside>
   <main>
-    <div class="bar" id="barWrap" style="display:none"><div id="bar"></div></div>
+    <div class="bar" id="barWrap" hidden><i id="bar" style="width:0"></i></div>
     <div id="msg"></div>
+    <div class="tools">
+      <input type="text" id="vSearch" placeholder="ভিডিও খোঁজো…">
+      <label class="muted"><input type="checkbox" id="hideShorts" data-chg="shorts"> শর্টস লুকাও</label>
+    </div>
+    <div class="tools" id="chTabs" hidden></div>
     <div id="count" class="muted" style="margin-bottom:12px"></div>
     <div class="grid" id="grid"></div>
+    <div class="tools" id="moreBar" style="margin-top:20px"></div>
   </main>
 </div>
 
-<div id="modal">
-  <div class="player" id="player"></div>
+<div id="vLists" class="page" hidden></div>
+<div id="vList" class="page" hidden></div>
+<div id="vStats" class="page" hidden></div>
+
+<!-- ফোকাস মোড -->
+<div id="focus" hidden>
+  <div class="ftop">
+    <button class="btn ghost sm" data-act="closeFocus">✕ বন্ধ</button>
+    <div class="ftitle" id="fTitle"></div>
+    <div class="pomo"><span id="pomoMode" class="muted">ফোকাস</span><b id="pomoTime">25:00</b>
+      <button class="btn ghost sm" data-act="pomoToggle" id="pomoBtn">▶</button>
+      <button class="btn ghost sm" data-act="pomoReset">⟲</button></div>
+  </div>
+  <div class="fbody">
+    <div class="fmain">
+      <div class="pwrap"><div id="ytp"></div><div id="endcard" hidden></div></div>
+      <div class="fmeta"><h2 id="fVid"></h2><div class="muted" id="fCh"></div></div>
+      <div class="ctrl">
+        <button class="btn ghost sm" data-act="prev">⏮ আগেরটা</button>
+        <button class="btn ghost sm" id="doneBtn" data-act="toggleDone">✓ দেখা শেষ</button>
+        <button class="btn ghost sm" data-act="next">পরেরটা ⏭</button>
+        <label class="muted"><input type="checkbox" id="autoNext" checked> অটো পরের ভিডিও</label>
+        <span class="muted" id="fWatched"></span>
+      </div>
+      <h3 style="margin:16px 0 4px;font-size:15px">নোট</h3>
+      <div class="noteadd"><input id="noteIn" placeholder="এই মুহূর্তের নোট লেখো, Enter চাপো"><button class="btn sm" data-act="addNote">＋ নোট</button></div>
+      <div id="notes"></div>
+    </div>
+    <div class="fside"><div id="fListHead"></div><div id="queue" style="margin-top:10px"></div></div>
+  </div>
 </div>
+
+<div id="dlg" hidden><div id="dlgBox"><button class="ib x" data-act="closeDlg">✕</button><div id="dlgBody"></div></div></div>
+<div id="toast"></div>
+<input type="file" id="importFile" accept="application/json" hidden>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-const API = 'https://www.googleapis.com/youtube/v3';
-const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
-const PER_CHANNEL = 8;      // প্রতি চ্যানেল থেকে কয়টা সর্বশেষ ভিডিও
-const $ = id => document.getElementById(id);
-let token = null, tokenClient = null, subs = [], videos = [], filter = null;
+/* ============ সাধারণ ============ */
+const API='https://www.googleapis.com/youtube/v3';
+const SCOPE='https://www.googleapis.com/auth/youtube.readonly';
+const PER_CHANNEL=8, CACHE_MIN=30;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nid=()=>Math.random().toString(36).slice(2,9);
+const p2=n=>String(n).padStart(2,'0');
+function fmtDur(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${p2(m)}:${p2(x)}`:`${m}:${p2(x)}`}
+function fmtHM(s){const m=Math.round(s/60);if(m<60)return m+' মিনিট';const h=Math.floor(m/60),r=m%60;return h+' ঘণ্টা'+(r?' '+r+' মিনিট':'')}
+function isoDur(s){const m=/^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(s||'');if(!m)return 0;return(+m[1]||0)*86400+(+m[2]||0)*3600+(+m[3]||0)*60+(+m[4]||0)}
+function ago(d){const s=(Date.now()-d.getTime())/1000;for(const[n,l]of[[31536000,'বছর'],[2592000,'মাস'],[604800,'সপ্তাহ'],[86400,'দিন'],[3600,'ঘণ্টা'],[60,'মিনিট']])if(s>=n)return Math.floor(s/n)+' '+l+' আগে';return 'এইমাত্র'}
+const dayStr=(off=0)=>{const d=new Date();d.setDate(d.getDate()-off);return d.toLocaleDateString('en-CA')};
+let toastT;function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>e.style.display='none',2800)}
+function dlg(html){$('dlgBody').innerHTML=html;$('dlg').hidden=false;const i=$('dlgBody').querySelector('input[type=text],input:not([type])');if(i)setTimeout(()=>i.focus(),50)}
+function closeDlg(){$('dlg').hidden=true;$('dlgBody').innerHTML=''}
 
-$('origin').textContent = location.origin;
-const getId = () => { try { return localStorage.getItem('yt_client_id') || ''; } catch { return ''; } };
+/* ============ স্টেট ও ডেটা (ব্রাউজারে সেভ) ============ */
+let token=null,tokenClient=null,uid='default',subs=[],videos=[],vmap=new Map(),filter=null,view='feed',openListId=null,D=null;
+const getId=()=>{try{return localStorage.getItem('yt_client_id')||''}catch{return ''}};
+const blank=()=>({lists:[],vids:{},prog:{},notes:{},log:{},goalMin:30,hideShorts:false});
+function loadData(){try{D=Object.assign(blank(),JSON.parse(localStorage.getItem('ytf_data_'+uid)||'{}'))}catch{D=blank()}}
+let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(saveNow,400)}
+function saveNow(){try{localStorage.setItem('ytf_data_'+uid,JSON.stringify(D))}catch(e){toast('সেভ করা যায়নি (ব্রাউজারের স্টোরেজ ভর্তি?)')}}
+const P=id=>D.prog[id]||(D.prog[id]={watched:0,pos:0,done:false,last:0});
+const durOf=id=>(D.vids[id]&&D.vids[id].dur)||0;
+function frac(id){const p=D.prog[id];if(!p)return 0;if(p.done)return 1;const d=durOf(id);return d?Math.min(.99,p.watched/d):0}
+function listStats(l){let tot=0,got=0,done=0;l.videos.forEach(id=>{const d=durOf(id);tot+=d;got+=frac(id)*d;if(D.prog[id]&&D.prog[id].done)done++});const n=l.videos.length;return{tot,got,done,n,pct:tot?got/tot:(n?done/n:0),remain:Math.max(0,tot-got)}}
+const isLocked=(l,i)=>{if(!l.ordered)return false;for(let j=0;j<i;j++)if(!(D.prog[l.videos[j]]&&D.prog[l.videos[j]].done))return true;return false};
+const getList=id=>D.lists.find(l=>l.id===id);
+function ensureMeta(id){if(!D.vids[id]){const v=vmap.get(id);if(v)D.vids[id]={id,title:v.title,chId:v.chId,chTitle:v.chTitle,thumb:v.thumb,dur:v.dur||0,date:v.date.getTime()}}return D.vids[id]}
+function nextUp(l){for(let i=0;i<l.videos.length;i++){if(!(D.prog[l.videos[i]]&&D.prog[l.videos[i]].done))return isLocked(l,i)?null:l.videos[i]}return null}
 
-function show(which){
-  $('setup').style.display = which==='setup' ? '' : 'none';
-  $('login').style.display = which==='login' ? '' : 'none';
-  $('app').style.display = which==='app' ? '' : 'none';
-  $('signOutBtn').style.display = $('refreshBtn').style.display = which==='app' ? '' : 'none';
-}
+/* ============ লগইন ============ */
+$('origin').textContent=location.origin;
+function showScreen(w){['setup','login'].forEach(k=>$(k).hidden=k!==w);const app=w==='app';$('nav').hidden=!app;$('refreshBtn').hidden=!app;$('signOutBtn').hidden=!app;if(!app){['vFeed','vLists','vList','vStats'].forEach(k=>$(k).hidden=true)}}
 function init(){
-  if(location.protocol === 'file:'){
-    $('setup').insertAdjacentHTML('afterbegin','<div class="err">এই ফাইলটা সরাসরি ডাবল-ক্লিক করে খুললে লগইন কাজ করবে না। লোকালহোস্ট বা হোস্টিং থেকে চালাও (ব্যাখ্যা চ্যাটে দেওয়া আছে)।</div>');
-  }
-  show(getId() ? 'login' : 'setup');
+  if(location.protocol==='file:')$('setup').insertAdjacentHTML('afterbegin','<div class="err">ফাইল সরাসরি ডাবল-ক্লিকে খুললে লগইন কাজ করবে না। লোকালহোস্ট বা হোস্টিং থেকে চালাও।</div>');
+  showScreen(getId()?'login':'setup');
 }
-$('saveId').onclick = () => {
-  const v = $('clientId').value.trim();
-  if(!v.endsWith('.apps.googleusercontent.com')) return alert('Client ID ঠিক মনে হচ্ছে না।');
-  try{ localStorage.setItem('yt_client_id', v); }catch{}
-  show('login');
-};
-$('changeId').onclick = () => { $('clientId').value = getId(); show('setup'); };
-
 function startAuth(){
-  if(!window.google || !google.accounts){ alert('Google স্ক্রিপ্ট লোড হয়নি, ইন্টারনেট চেক করে আবার চেষ্টা করো।'); return; }
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: getId(), scope: SCOPE,
-    callback: resp => {
-      if(resp.error){ alert('লগইন হয়নি: ' + resp.error); return; }
-      token = resp.access_token; show('app'); loadAll();
-    }
-  });
+  if(!window.google||!google.accounts){alert('Google স্ক্রিপ্ট লোড হয়নি, ইন্টারনেট চেক করে আবার চেষ্টা করো।');return}
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:getId(),scope:SCOPE,callback:async r=>{
+    if(r.error){alert('লগইন হয়নি: '+r.error);return}
+    token=r.access_token;showScreen('app');
+    try{const d=await api('/channels',{part:'id',mine:'true'});uid=(d.items&&d.items[0]&&d.items[0].id)||'default'}catch{uid='default'}
+    loadData();$('hideShorts').checked=!!D.hideShorts;setView('feed');loadAll(false);
+  }});
   tokenClient.requestAccessToken();
 }
-$('signInBtn').onclick = startAuth;
-$('refreshBtn').onclick = () => loadAll();
-$('signOutBtn').onclick = signOut;
-function signOut(){
-  if(token && window.google) google.accounts.oauth2.revoke(token, () => {});
-  token = null; subs = []; videos = []; show('login');
-}
+function signOut(){if(token&&window.google)google.accounts.oauth2.revoke(token,()=>{});token=null;subs=[];videos=[];showScreen('login')}
 
-async function api(path, params){
-  const u = new URL(API + path);
-  Object.entries(params).forEach(([k,v]) => u.searchParams.set(k, v));
-  const r = await fetch(u, { headers: { Authorization: 'Bearer ' + token } });
-  if(r.status === 401){ signOut(); throw new Error('সেশন শেষ হয়ে গেছে, আবার লগইন করো।'); }
-  if(!r.ok){
-    const e = await r.json().catch(() => ({}));
-    const m = e.error && e.error.message ? e.error.message : ('HTTP ' + r.status);
-    const err = new Error(m); err.status = r.status; throw err;
-  }
+async function api(path,params){
+  const u=new URL(API+path);Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+  const r=await fetch(u,{headers:{Authorization:'Bearer '+token}});
+  if(r.status===401){signOut();throw new Error('সেশন শেষ হয়ে গেছে, আবার লগইন করো।')}
+  if(!r.ok){const e=await r.json().catch(()=>({}));const er=new Error(e.error&&e.error.message?e.error.message:'HTTP '+r.status);er.status=r.status;throw er}
   return r.json();
 }
+async function fetchDurs(ids){
+  const out={};const chunks=[];for(let i=0;i<ids.length;i+=50)chunks.push(ids.slice(i,i+50));
+  await Promise.all(chunks.map(async c=>{try{const d=await api('/videos',{part:'contentDetails',id:c.join(','),maxResults:50});d.items.forEach(i=>out[i.id]=isoDur(i.contentDetails.duration))}catch(e){}}));
+  return out;
+}
 
-function setProgress(p){ $('barWrap').style.display = p>=1 ? 'none' : ''; $('bar').style.width = (p*100)+'%'; }
-function showError(t){ $('msg').innerHTML = t ? '<div class="err"></div>' : ''; if(t) $('msg').firstChild.textContent = t; }
+/* ============ ফিড লোড ============ */
+function setProgress(p){$('barWrap').hidden=p>=1;$('bar').style.width=(p*100)+'%'}
+function showError(t){$('msg').innerHTML=t?'<div class="err">'+esc(t)+'</div>':''}
+const cacheKey=()=>'ytf_cache_'+uid;
+function readCache(){try{const c=JSON.parse(localStorage.getItem(cacheKey())||'null');if(c&&Date.now()-c.ts<CACHE_MIN*60000)return c}catch{}return null}
+function writeCache(){try{localStorage.setItem(cacheKey(),JSON.stringify({ts:Date.now(),subs,videos:videos.map(v=>({...v,date:v.date.getTime()}))}))}catch{}}
+function indexVideos(){vmap=new Map(videos.map(v=>[v.id,v]))}
 
-async function loadAll(){
-  showError(''); $('grid').innerHTML = ''; $('count').textContent = 'চ্যানেল লোড হচ্ছে…'; setProgress(0.02);
+async function loadAll(force){
+  showError('');
+  if(force){Object.keys(chAll).forEach(k=>delete chAll[k]);Object.keys(chPl).forEach(k=>delete chPl[k]);plView=null}
+  if(!force){const c=readCache();if(c){subs=c.subs;videos=c.videos.map(v=>({...v,date:new Date(v.date)}));indexVideos();renderChannels();renderFeed();setProgress(1);return}}
+  $('grid').innerHTML='';$('count').textContent='চ্যানেল লোড হচ্ছে…';setProgress(.02);
   try{
-    subs = []; let page = '';
-    do{
-      const d = await api('/subscriptions', { part:'snippet', mine:'true', maxResults:50, order:'alphabetical', ...(page?{pageToken:page}:{}) });
-      d.items.forEach(i => subs.push({
-        id: i.snippet.resourceId.channelId, title: i.snippet.title,
-        thumb: (i.snippet.thumbnails.default||{}).url || ''
-      }));
-      page = d.nextPageToken || '';
-    } while(page);
+    subs=[];let page='';
+    do{const d=await api('/subscriptions',{part:'snippet',mine:'true',maxResults:50,order:'alphabetical',...(page?{pageToken:page}:{})});
+      d.items.forEach(i=>subs.push({id:i.snippet.resourceId.channelId,title:i.snippet.title,thumb:(i.snippet.thumbnails.default||{}).url||''}));page=d.nextPageToken||''}while(page);
     renderChannels();
-    if(!subs.length){ $('count').textContent = 'কোনো সাবস্ক্রিপশন পাওয়া যায়নি।'; setProgress(1); return; }
-
-    videos = []; let done = 0, quotaHit = false;
-    const queue = subs.slice();
+    if(!subs.length){$('count').textContent='কোনো সাবস্ক্রিপশন পাওয়া যায়নি।';setProgress(1);return}
+    videos=[];let done=0,quota=false;const queue=subs.slice();
     async function worker(){
-      while(queue.length && !quotaHit){
-        const ch = queue.shift();
-        try{
-          // চ্যানেল আইডি UC... → আপলোড প্লেলিস্ট UU...
-          const d = await api('/playlistItems', { part:'snippet,contentDetails', playlistId:'UU'+ch.id.slice(2), maxResults:PER_CHANNEL });
-          d.items.forEach(i => {
-            const t = i.snippet.title;
-            if(t === 'Private video' || t === 'Deleted video') return;
-            videos.push({
-              id: i.contentDetails.videoId, title: t, chId: ch.id, chTitle: ch.title, chThumb: ch.thumb,
-              date: new Date(i.contentDetails.videoPublishedAt || i.snippet.publishedAt),
-              thumb: ((i.snippet.thumbnails.medium || i.snippet.thumbnails.high || i.snippet.thumbnails.default) || {}).url
-                     || ('https://i.ytimg.com/vi/' + i.contentDetails.videoId + '/mqdefault.jpg')
-            });
-          });
-        }catch(e){
-          if(e.status === 403 && /quota/i.test(e.message)){ quotaHit = true; showError('আজকের YouTube API কোটা শেষ। কাল আবার চেষ্টা করো।'); }
-        }
-        done++; setProgress(done / subs.length);
-        if(done % 10 === 0) renderVideos();
-      }
+      while(queue.length&&!quota){const ch=queue.shift();
+        try{const d=await api('/playlistItems',{part:'snippet,contentDetails',playlistId:'UU'+ch.id.slice(2),maxResults:PER_CHANNEL});
+          d.items.forEach(i=>{const t=i.snippet.title;if(t==='Private video'||t==='Deleted video')return;
+            videos.push({id:i.contentDetails.videoId,title:t,chId:ch.id,chTitle:ch.title,chThumb:ch.thumb,dur:0,
+              date:new Date(i.contentDetails.videoPublishedAt||i.snippet.publishedAt),
+              thumb:((i.snippet.thumbnails.medium||i.snippet.thumbnails.high||i.snippet.thumbnails.default)||{}).url||('https://i.ytimg.com/vi/'+i.contentDetails.videoId+'/mqdefault.jpg')})});
+        }catch(e){if(e.status===403&&/quota/i.test(e.message)){quota=true;showError('আজকের YouTube API কোটা শেষ। কাল আবার চেষ্টা করো।')}}
+        done++;setProgress(done/subs.length*.85);if(done%10===0){indexVideos();renderFeed()}}
     }
-    await Promise.all(Array.from({length:6}, worker));
-    setProgress(1); renderVideos();
-  }catch(e){ showError(e.message); $('count').textContent = ''; setProgress(1); }
+    await Promise.all(Array.from({length:6},worker));
+    indexVideos();renderFeed();
+    const durs=await fetchDurs(videos.map(v=>v.id));videos.forEach(v=>{v.dur=durs[v.id]||0;if(D.vids[v.id]&&v.dur)D.vids[v.id].dur=v.dur});
+    indexVideos();setProgress(1);renderFeed();writeCache();save();
+    if(filter)loadChannelVideos(filter,false);
+  }catch(e){showError(e.message);$('count').textContent='';setProgress(1)}
 }
 
+/* ============ ফিড রেন্ডার ============ */
 function renderChannels(){
-  const q = $('chSearch').value.trim().toLowerCase();
-  const list = $('chList'); list.innerHTML = '';
-  subs.filter(c => c.title.toLowerCase().includes(q)).forEach(c => {
-    const b = document.createElement('button');
-    b.className = 'ch' + (filter === c.id ? ' active' : '');
-    b.innerHTML = '<img alt=""><span></span>';
-    b.querySelector('img').src = c.thumb; b.querySelector('span').textContent = c.title;
-    b.onclick = () => { filter = c.id; syncActive(); renderVideos(); $('side').classList.remove('open'); window.scrollTo(0,0); };
-    list.appendChild(b);
-  });
-  syncActive();
+  const q=$('chSearch').value.trim().toLowerCase();
+  $('chList').innerHTML=subs.filter(c=>c.title.toLowerCase().includes(q)).map(c=>`<button class="ch ${filter===c.id?'active':''}" data-act="pickCh" data-id="${c.id}"><img alt="" src="${esc(c.thumb)}"><span>${esc(c.title)}</span></button>`).join('');
+  $('allBtn').classList.toggle('active',filter===null);
 }
-function syncActive(){
-  $('allBtn').classList.toggle('active', filter === null);
-  [...$('chList').children].forEach((b,i) => {});
+function cardHTML(v){
+  const f=frac(v.id),inList=D.lists.some(l=>l.videos.includes(v.id));
+  return `<div class="card" data-act="play" data-id="${v.id}"><div class="thumb"><img loading="lazy" alt="" src="${esc(v.thumb)}">${v.dur?`<span class="dur">${fmtDur(v.dur)}</span>`:''}${isSub(v.chId)?`<button class="addb ${inList?'on':''}" data-act="add" data-id="${v.id}" title="ওয়াচলিস্টে যোগ করো">${inList?'✓':'＋'}</button>`:''}${f?`<div class="pbar"><i style="width:${f*100}%"></i></div>`:''}</div><h3>${esc(v.title)}</h3><p>${esc(v.chTitle)} · ${ago(v.date)}</p></div>`;
 }
-$('allBtn').onclick = () => { filter = null; renderChannels(); renderVideos(); $('side').classList.remove('open'); };
-$('chSearch').oninput = renderChannels;
-$('menuBtn').onclick = () => $('side').classList.toggle('open');
+/* একটা চ্যানেল সিলেক্ট করলে তার আপলোড প্লেলিস্ট থেকে ৫০টা করে ভিডিও লোড হয় */
+const chAll={};
+const chSource=id=>chAll[id]?chAll[id].videos:videos.filter(v=>v.chId===id);
+async function loadChannelVideos(id,all){
+  const st=chAll[id]||(chAll[id]={videos:[],next:'',started:false,loading:false,done:false});
+  if(st.loading||st.done)return;
+  st.loading=true;st.started=true;renderMore();
+  const ch=subs.find(s=>s.id===id)||{title:'',thumb:''};
+  try{
+    do{
+      const d=await api('/playlistItems',{part:'snippet,contentDetails',playlistId:'UU'+id.slice(2),maxResults:50,...(st.next?{pageToken:st.next}:{})});
+      const fresh=[];
+      d.items.forEach(i=>{const t=i.snippet.title;if(t==='Private video'||t==='Deleted video')return;
+        fresh.push({id:i.contentDetails.videoId,title:t,chId:id,chTitle:ch.title,chThumb:ch.thumb,dur:0,
+          date:new Date(i.contentDetails.videoPublishedAt||i.snippet.publishedAt),
+          thumb:((i.snippet.thumbnails.medium||i.snippet.thumbnails.high||i.snippet.thumbnails.default)||{}).url||('https://i.ytimg.com/vi/'+i.contentDetails.videoId+'/mqdefault.jpg')})});
+      const durs=await fetchDurs(fresh.map(v=>v.id));
+      fresh.forEach(v=>{v.dur=durs[v.id]||0;vmap.set(v.id,v);if(D.vids[v.id]&&v.dur)D.vids[v.id].dur=v.dur});
+      const have=new Set(st.videos.map(v=>v.id));
+      fresh.forEach(v=>{if(!have.has(v.id))st.videos.push(v)});
+      st.next=d.nextPageToken||'';if(!st.next)st.done=true;
+      if(filter===id)renderFeed();
+    }while(all&&!st.done&&filter===id);
+  }catch(e){
+    if(e.status===404)st.done=true;
+    showError(e.status===404?'এই চ্যানেলের আপলোড লিস্ট পাওয়া যায়নি।':e.message);
+  }
+  st.loading=false;renderMore();
+}
+function renderMore(){
+  const b=$('moreBar');if(!filter||(chTab==='playlists'&&!plView)){b.innerHTML='';return}
+  const st=plView||chAll[filter];if(!st){b.innerHTML='';return}
+  if(st.loading)b.innerHTML='<span class="muted">আরও ভিডিও লোড হচ্ছে…</span>';
+  else if(st.done)b.innerHTML=`<span class="muted">✓ ${plView?'প্লেলিস্টের':'চ্যানেলের'} সব ${st.videos.length}টি ভিডিও লোড হয়েছে</span>`;
+  else b.innerHTML=`<button class="btn ghost" data-act="chMore">আরও ৫০টি দেখাও</button><button class="btn ghost" data-act="chAllLoad">সব ভিডিও লোড করো</button><span class="muted">${st.videos.length}টি লোড হয়েছে</span>`;
+}
+/* চ্যানেলের প্লেলিস্ট */
+const isSub=id=>subs.some(s=>s.id===id);
+let chTab='videos',plView=null;const chPl={};
+async function loadPlaylists(id){
+  const st=chPl[id]||(chPl[id]={items:[],next:'',loading:false,done:false});
+  if(st.loading||st.done)return;
+  st.loading=true;
+  try{
+    do{
+      const d=await api('/playlists',{part:'snippet,contentDetails',channelId:id,maxResults:50,...(st.next?{pageToken:st.next}:{})});
+      d.items.forEach(p=>st.items.push({id:p.id,title:p.snippet.title,count:p.contentDetails.itemCount,thumb:((p.snippet.thumbnails&&(p.snippet.thumbnails.medium||p.snippet.thumbnails.default))||{}).url||'',date:new Date(p.snippet.publishedAt)}));
+      st.next=d.nextPageToken||'';if(!st.next)st.done=true;
+      if(filter===id)renderFeed();
+    }while(!st.done&&filter===id);
+  }catch(e){showError(e.message)}
+  st.loading=false;if(filter===id)renderFeed();
+}
+function openPlaylist(pid){
+  const p=(chPl[filter]||{items:[]}).items.find(x=>x.id===pid);if(!p)return;
+  plView={id:pid,title:p.title,videos:[],next:'',loading:false,done:false,chId:filter};
+  showError('');renderFeed();window.scrollTo(0,0);loadPlVideos(false);
+}
+async function loadPlVideos(all){
+  const pv=plView;if(!pv||pv.loading||pv.done)return;
+  pv.loading=true;renderMore();
+  try{
+    do{
+      const d=await api('/playlistItems',{part:'snippet,contentDetails',playlistId:pv.id,maxResults:50,...(pv.next?{pageToken:pv.next}:{})});
+      const fresh=[];
+      d.items.forEach(i=>{const t=i.snippet.title;if(t==='Private video'||t==='Deleted video')return;
+        const cid=i.snippet.videoOwnerChannelId||pv.chId,sc=subs.find(s=>s.id===cid);
+        fresh.push({id:i.contentDetails.videoId,title:t,chId:cid,chTitle:i.snippet.videoOwnerChannelTitle||(sc?sc.title:''),chThumb:sc?sc.thumb:'',dur:0,
+          date:new Date(i.contentDetails.videoPublishedAt||i.snippet.publishedAt),
+          thumb:((i.snippet.thumbnails&&(i.snippet.thumbnails.medium||i.snippet.thumbnails.high||i.snippet.thumbnails.default))||{}).url||('https://i.ytimg.com/vi/'+i.contentDetails.videoId+'/mqdefault.jpg')})});
+      const durs=await fetchDurs(fresh.map(v=>v.id));
+      const have=new Set(pv.videos.map(v=>v.id));
+      fresh.forEach(v=>{v.dur=durs[v.id]||0;vmap.set(v.id,v);if(D.vids[v.id]&&v.dur)D.vids[v.id].dur=v.dur;if(!have.has(v.id))pv.videos.push(v)});
+      pv.next=d.nextPageToken||'';if(!pv.next)pv.done=true;
+      if(plView===pv)renderFeed();
+    }while(all&&!pv.done&&plView===pv);
+  }catch(e){if(e.status===404)pv.done=true;showError(e.message)}
+  pv.loading=false;if(plView===pv)renderMore();
+}
+function renderTabs(){
+  const b=$('chTabs');
+  if(!filter){b.hidden=true;b.innerHTML='';return}
+  b.hidden=false;
+  if(plView){b.innerHTML=`<button class="btn ghost sm" data-act="plBack">← প্লেলিস্টগুলো</button><b>${esc(plView.title)}</b><button class="btn sm" data-act="plAddAll">＋ পুরো প্লেলিস্ট ওয়াচলিস্টে</button>`;return}
+  b.innerHTML=`<button class="btn ghost sm ${chTab==='videos'?'on':''}" data-act="chTab" data-t="videos">ভিডিও</button><button class="btn ghost sm ${chTab==='playlists'?'on':''}" data-act="chTab" data-t="playlists">প্লেলিস্ট</button>`;
+}
+function renderPlaylists(q){
+  if(!chPl[filter])loadPlaylists(filter);
+  const st=chPl[filter]||{items:[],loading:true,done:false};
+  const list=st.items.filter(p=>!q||p.title.toLowerCase().includes(q));
+  $('count').textContent=st.loading&&!list.length?'প্লেলিস্ট লোড হচ্ছে…':(list.length?list.length+'টি প্লেলিস্ট':(st.done?'এই চ্যানেলে কোনো পাবলিক প্লেলিস্ট নেই।':''));
+  $('grid').innerHTML=list.map(p=>`<div class="card" data-act="openPl" data-id="${p.id}"><div class="thumb">${p.thumb?`<img loading="lazy" alt="" src="${esc(p.thumb)}">`:''}<span class="dur">${p.count}টি ভিডিও</span></div><h3>${esc(p.title)}</h3><p>${ago(p.date)} তৈরি</p></div>`).join('');
+  renderMore();
+}
+function renderFeed(){
+  renderTabs();
+  const q=$('vSearch').value.trim().toLowerCase();
+  if(filter&&chTab==='playlists'&&!plView){renderPlaylists(q);return}
+  let list=(plView?plView.videos:(filter?chSource(filter):videos)).filter(v=>!q||v.title.toLowerCase().includes(q)||v.chTitle.toLowerCase().includes(q));
+  if(D&&D.hideShorts)list=list.filter(v=>!(v.dur>0&&v.dur<=60));
+  list.sort((a,b)=>b.date-a.date);
+  $('count').textContent=list.length+'টি ভিডিও'+(filter?'':' · '+subs.length+'টি চ্যানেল থেকে (প্রতি চ্যানেলের সর্বশেষ '+PER_CHANNEL+'টা)');
+  $('grid').innerHTML=list.slice(0,filter?2000:300).map(cardHTML).join('');
+  renderMore();
+}
 
-function ago(d){
-  const s = (Date.now() - d.getTime()) / 1000;
-  const u = [[31536000,'বছর'],[2592000,'মাস'],[604800,'সপ্তাহ'],[86400,'দিন'],[3600,'ঘণ্টা'],[60,'মিনিট']];
-  for(const [n,l] of u){ if(s >= n) return Math.floor(s/n) + ' ' + l + ' আগে'; }
-  return 'এইমাত্র';
+/* ============ ভিউ ============ */
+function setView(v,listId){
+  view=v;if(listId!==undefined)openListId=listId;
+  $('vFeed').hidden=v!=='feed';$('vLists').hidden=v!=='lists';$('vList').hidden=v!=='list';$('vStats').hidden=v!=='stats';
+  $('menuBtn').hidden=v!=='feed'||window.innerWidth>760;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===(v==='list'?'lists':v)));
+  rerender();window.scrollTo(0,0);
+}
+function rerender(){if(view==='feed')renderFeed();else if(view==='lists')renderLists();else if(view==='list')renderList();else if(view==='stats')renderStats()}
+
+/* ============ ওয়াচলিস্ট পেজ ============ */
+function renderLists(){
+  const cards=D.lists.map(l=>{const s=listStats(l);return `<div class="lcard" data-act="openList" data-id="${l.id}"><h3>${esc(l.name)}${l.ordered?' <span class="muted">· ক্রমানুযায়ী</span>':''}</h3><div class="muted">${s.n}টি ভিডিও · ${fmtHM(s.tot)}</div><div class="big" style="margin:8px 0 6px">${Math.round(s.pct*100)}%</div><div class="bar"><i style="width:${s.pct*100}%"></i></div><div class="muted" style="margin-top:6px">${s.done}/${s.n} শেষ · বাকি ${fmtHM(s.remain)}</div></div>`}).join('');
+  $('vLists').innerHTML=`<div class="pagehead"><h2>আমার ওয়াচলিস্ট</h2><button class="btn" data-act="newList">＋ নতুন লিস্ট</button></div>`+(D.lists.length?`<div class="lgrid">${cards}</div>`:`<div class="stat"><p>এখনো কোনো ওয়াচলিস্ট নেই।</p><p class="muted">ফিডে যেকোনো ভিডিওর ওপরের <b>＋</b> চাপলে ওয়াচলিস্টে যোগ করা যায়।</p></div>`);
+}
+function renderList(){
+  const l=getList(openListId);if(!l){setView('lists');return}
+  const s=listStats(l),nu=nextUp(l);
+  const rows=l.videos.map((id,i)=>{const v=D.vids[id];if(!v)return '';const f=frac(id),lock=isLocked(l,i),done=D.prog[id]&&D.prog[id].done;
+    return `<div class="vrow ${lock?'lock':''}" data-act="playIn" data-id="${id}" data-l="${l.id}"><div class="n">${l.ordered?(lock?'🔒':i+1):i+1}</div><div class="t"><img loading="lazy" alt="" src="${esc(v.thumb)}">${v.dur?`<span class="dur">${fmtDur(v.dur)}</span>`:''}<div class="pbar"><i style="width:${f*100}%"></i></div></div><div class="i"><b>${esc(v.title)}</b><div class="muted">${esc(v.chTitle)} · ${done?'✓ শেষ':f?Math.round(f*100)+'% দেখা':'দেখা হয়নি'}</div></div><div class="act"><button class="ib ${done?'done':''}" data-act="doneIn" data-id="${id}" title="দেখা শেষ চিহ্নিত">✓</button><button class="ib" data-act="up" data-id="${id}" data-l="${l.id}">↑</button><button class="ib" data-act="down" data-id="${id}" data-l="${l.id}">↓</button><button class="ib" data-act="rmVid" data-id="${id}" data-l="${l.id}">✕</button></div></div>`}).join('');
+  $('vList').innerHTML=`<div class="pagehead"><button class="btn ghost sm" data-act="nav" data-view="lists">← সব লিস্ট</button><h2>${esc(l.name)}</h2><button class="btn ghost sm" data-act="renameList">নাম বদলাও</button><button class="btn ghost sm" data-act="delList">মুছে ফেলো</button></div>
+  <div class="stat" style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div class="big">${Math.round(s.pct*100)}%</div><div style="flex:1;min-width:200px"><div class="bar" style="height:10px"><i style="width:${s.pct*100}%"></i></div><div class="muted" style="margin-top:6px">${s.done}/${s.n} ভিডিও শেষ · মোট ${fmtHM(s.tot)} · বাকি ${fmtHM(s.remain)}</div></div>
+  <button class="btn" data-act="continueList" ${nu?'':'disabled'}>${s.done?'▶ চালিয়ে যাও':'▶ শুরু করো'}</button></div>
+  <div class="tools" style="margin:12px 0 0"><label class="muted"><input type="checkbox" data-chg="ordered" ${l.ordered?'checked':''}> ক্রমানুযায়ী দেখতে হবে (আগেরটা শেষ না হলে পরেরটা লক)</label><button class="btn ghost sm" data-act="importPl">YouTube প্লেলিস্ট ইমপোর্ট</button></div></div>`+(rows||`<div class="stat"><p>লিস্ট খালি।</p><p class="muted">ফিড থেকে ভিডিওর ওপরের ＋ চেপে যোগ করো, অথবা সাবস্ক্রাইব করা চ্যানেলের প্লেলিস্ট ইমপোর্ট করো।</p></div>`);
 }
 
-function renderVideos(){
-  const list = videos.filter(v => !filter || v.chId === filter).sort((a,b) => b.date - a.date);
-  $('count').textContent = list.length + 'টি ভিডিও' + (filter ? '' : ' · ' + subs.length + 'টি চ্যানেল থেকে');
-  const g = $('grid'); g.innerHTML = '';
-  const frag = document.createDocumentFragment();
-  list.slice(0, 300).forEach(v => {
-    const c = document.createElement('button'); c.className = 'card';
-    c.innerHTML = '<div class="thumb"><img loading="lazy" alt=""></div><h3></h3><p></p>';
-    c.querySelector('img').src = v.thumb;
-    c.querySelector('h3').textContent = v.title;
-    c.querySelector('p').textContent = v.chTitle + ' · ' + ago(v.date);
-    c.onclick = () => play(v);
-    frag.appendChild(c);
-  });
-  g.appendChild(frag);
+/* ============ স্ট্যাটস ============ */
+function renderStats(){
+  const goal=D.goalMin*60,today=D.log[dayStr(0)]||0;
+  let streak=0,off=today>=goal?0:1;while((D.log[dayStr(off)]||0)>=goal&&goal>0){streak++;off++;if(off>3650)break}
+  const total=Object.values(D.log).reduce((a,b)=>a+b,0),doneN=Object.values(D.prog).filter(p=>p.done).length;
+  const week=[];for(let i=6;i>=0;i--)week.push({d:dayStr(i),s:D.log[dayStr(i)]||0,w:new Date(dayStr(i)+'T00:00').toLocaleDateString('bn-BD',{weekday:'short'})});
+  const mx=Math.max(goal,...week.map(x=>x.s),1);
+  const first=new Date();first.setDate(first.getDate()-104);const pad=first.getDay();
+  let cells='<i style="visibility:hidden"></i>'.repeat(pad);
+  for(let i=104;i>=0;i--){const s=D.log[dayStr(i)]||0;const r=goal?s/goal:0;const lv=s<=0?0:r<.34?1:r<.67?2:r<1?3:4;cells+=`<i class="l${lv}" title="${dayStr(i)}: ${Math.round(s/60)} মিনিট"></i>`}
+  const pct=Math.min(100,goal?today/goal*100:0);
+  $('vStats').innerHTML=`<div class="pagehead"><h2>স্ট্যাটস</h2></div>
+  <div class="stgrid">
+   <div class="stat"><div class="muted">আজকের টার্গেট</div><div class="ring" style="background:conic-gradient(var(--ok) ${pct}%,var(--panel2) 0)"><div>${Math.round(today/60)}/${D.goalMin}</div></div><div class="muted">মিনিট</div></div>
+   <div class="stat"><div class="muted">টার্গেট পূরণের স্ট্রিক</div><div class="big" style="margin-top:14px">🔥 ${streak}</div><div class="muted">দিন পরপর</div></div>
+   <div class="stat"><div class="muted">মোট দেখার সময়</div><div class="big" style="margin-top:14px">${fmtHM(total)}</div><div class="muted">${doneN}টি ভিডিও শেষ</div></div>
+   <div class="stat"><div class="muted">দৈনিক টার্গেট (মিনিট)</div><input type="number" min="5" max="600" step="5" value="${D.goalMin}" data-chg="goal" style="width:100%;margin-top:14px;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"></div>
+  </div>
+  <div class="stat" style="margin-bottom:18px"><b>গত ৭ দিন</b><div class="days">${week.map(x=>`<div><i style="height:${Math.max(2,x.s/mx*90)}px"></i>${Math.round(x.s/60)}ম<br>${x.w}</div>`).join('')}</div></div>
+  <div class="stat" style="margin-bottom:18px"><b>গত ১৫ সপ্তাহ</b><div class="heat" style="margin-top:10px">${cells}</div></div>
+  <div class="stat"><b>ব্যাকআপ</b><p class="muted">তোমার সব ডেটা শুধু এই ব্রাউজারে সেভ থাকে। ব্রাউজারের ডেটা মুছলে বা অন্য ডিভাইসে গেলে ডেটা পাওয়া যাবে না, তাই মাঝে মাঝে ব্যাকআপ নিয়ে রাখো।</p><button class="btn ghost sm" data-act="export">⬇ ব্যাকআপ নামাও</button> <button class="btn ghost sm" data-act="import">⬆ ব্যাকআপ থেকে ফেরাও</button></div>`;
 }
 
-function play(v){
-  const p = $('player');
-  p.innerHTML = '<div class="frame"><iframe allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>' +
-    '<div class="meta"><div><h3></h3><span class="muted"></span></div><button class="btn ghost">বন্ধ করো</button></div>';
-  p.querySelector('iframe').src = 'https://www.youtube.com/embed/' + v.id + '?autoplay=1&rel=0';
-  p.querySelector('h3').textContent = v.title;
-  p.querySelector('.muted').textContent = v.chTitle;
-  p.querySelector('button').onclick = closeModal;
-  $('modal').classList.add('open');
+/* ============ লিস্ট ম্যানেজমেন্ট ============ */
+function askName(title,init,okText,cb){
+  dlg(`<h3>${esc(title)}</h3><div class="rowf"><input type="text" id="nameIn" value="${esc(init)}" maxlength="80" placeholder="লিস্টের নাম"><button class="btn" id="nameOk">${esc(okText)}</button></div>`);
+  const go=()=>{const v=$('nameIn').value.trim();if(!v)return;closeDlg();cb(v)};
+  $('nameOk').onclick=go;$('nameIn').onkeydown=e=>{if(e.key==='Enter')go()};
 }
-function closeModal(){ $('modal').classList.remove('open'); $('player').innerHTML = ''; }
-$('modal').onclick = e => { if(e.target === $('modal')) closeModal(); };
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+function createList(name){const l={id:nid(),name,ordered:false,created:Date.now(),videos:[]};D.lists.push(l);save();return l}
+function openAddDlg(id){
+  const v=ensureMeta(id);if(!v)return;
+  dlg(`<h3>ওয়াচলিস্টে যোগ করো</h3><p class="muted">${esc(v.title)}</p>`+
+   (D.lists.length?D.lists.map(l=>`<label class="row"><input type="checkbox" data-chg="inlist" data-l="${l.id}" data-id="${id}" ${l.videos.includes(id)?'checked':''}> ${esc(l.name)} <span class="muted">(${l.videos.length})</span></label>`).join(''):'<p class="muted">এখনো কোনো লিস্ট নেই, নিচে নতুন বানাও।</p>')+
+   `<div class="rowf"><input type="text" id="newListName" placeholder="নতুন লিস্টের নাম"><button class="btn" data-act="createAdd" data-id="${id}">বানাও ও যোগ করো</button></div>`);
+}
+async function importPlaylist(url){
+  let pid=null;try{pid=new URL(url).searchParams.get('list')}catch{}
+  if(!pid){const m=/(?:PL|UU|FL|OL|LL)[\w-]{10,}/.exec(url);pid=m&&m[0]}
+  if(!pid){toast('সঠিক প্লেলিস্ট লিংক দাও');return}
+  const l=getList(openListId);if(!l)return;
+  importPlaylistId(pid,l);
+}
+async function importPlaylistId(pid,l){
+  if(!l)return;
+  dlg('<h3>ইমপোর্ট হচ্ছে…</h3><p class="muted">একটু অপেক্ষা করো।</p>');
+  try{
+    const set=new Set(subs.map(s=>s.id));let page='',items=[],n=0;
+    do{const d=await api('/playlistItems',{part:'snippet,contentDetails',playlistId:pid,maxResults:50,...(page?{pageToken:page}:{})});items.push(...d.items);page=d.nextPageToken||'';n++}while(page&&n<8);
+    let skipped=0;const ok=[];
+    items.forEach(i=>{const t=i.snippet.title,ch=i.snippet.videoOwnerChannelId;if(t==='Private video'||t==='Deleted video'||!ch||!set.has(ch)){skipped++;return}ok.push(i)});
+    const durs=await fetchDurs(ok.map(i=>i.contentDetails.videoId));let added=0;
+    ok.forEach(i=>{const id=i.contentDetails.videoId;if(l.videos.includes(id))return;
+      if(!D.vids[id])D.vids[id]={id,title:i.snippet.title,chId:i.snippet.videoOwnerChannelId,chTitle:i.snippet.videoOwnerChannelTitle||'',thumb:((i.snippet.thumbnails.medium||i.snippet.thumbnails.default)||{}).url||('https://i.ytimg.com/vi/'+id+'/mqdefault.jpg'),dur:durs[id]||0,date:new Date(i.snippet.publishedAt).getTime()};
+      l.videos.push(id);added++});
+    save();closeDlg();rerender();
+    toast(`${added}টি ভিডিও যোগ হয়েছে`+(skipped?` · ${skipped}টি বাদ (সাবস্ক্রাইব করা চ্যানেলের নয় বা প্রাইভেট)`:''));
+  }catch(e){closeDlg();toast('ইমপোর্ট হয়নি: '+e.message)}
+}
 
-init();
+/* ============ ফোকাস মোড ============ */
+let player=null,playerReady=false,pending=null,cur=null,lastT=null,tickT=null,endT=null,ytLoading=null;
+const curList=()=>cur&&cur.listId?getList(cur.listId):null;
+function loadYT(){if(window.YT&&YT.Player)return Promise.resolve();if(ytLoading)return ytLoading;ytLoading=new Promise(res=>{window.onYouTubeIframeAPIReady=res;const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s)});return ytLoading}
+function startPos(id){const p=P(id),d=durOf(id);return(!p.done&&p.pos>5&&(!d||p.pos<d-8))?Math.floor(p.pos):0}
+async function openFocus(id,listId){
+  const l=listId?getList(listId):null;
+  if(l){const i=l.videos.indexOf(id);if(isLocked(l,i)){toast('আগের ভিডিওগুলো শেষ করলে এটা খুলবে');return}}
+  if(!ensureMeta(id))return;
+  closeDlg();cur={id,listId:l?l.id:null};lastT=null;
+  $('focus').hidden=false;document.body.style.overflow='hidden';hideEnd();renderFocus();
+  await loadYT();
+  const start=startPos(id);
+  if(player&&playerReady)player.loadVideoById({videoId:id,startSeconds:start});
+  else if(player)pending={id,start};
+  else player=new YT.Player('ytp',{videoId:id,width:'100%',height:'100%',playerVars:{autoplay:1,rel:0,modestbranding:1,playsinline:1,start},events:{onReady:()=>{playerReady=true;if(pending){player.loadVideoById({videoId:pending.id,startSeconds:pending.start});pending=null}},onStateChange:onPState,onError:onPErr}});
+  clearInterval(tickT);tickT=setInterval(tick,1000);
+}
+function closeFocus(){
+  try{if(player&&playerReady)player.pauseVideo()}catch{}
+  clearInterval(tickT);hideEnd();$('focus').hidden=true;document.body.style.overflow='';saveNow();cur=null;rerender();
+}
+function onPState(e){
+  if(!cur)return;
+  if(e.data===1){lastT=null;if(!durOf(cur.id)){try{const d=player.getDuration();if(d>0&&D.vids[cur.id]){D.vids[cur.id].dur=Math.round(d);renderFocusMeta();renderQueue()}}catch{}}}
+  else if(e.data===2){lastT=null;save()}
+  else if(e.data===0){onEnded()}
+}
+function onPErr(e){
+  if(!cur)return;
+  const embed=[101,150].includes(e.data);
+  showEnd(`<div style="font-size:34px">⚠️</div><div>${embed?'এই ভিডিওর মালিক এমবেড করতে দেননি।':'ভিডিও চালানো যায়নি।'}</div><a class="btn" target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=${cur.id}">YouTube এ খোলো</a><div class="muted">দেখা শেষ হলে নিচে "✓ দেখা শেষ" চেপে চিহ্নিত করতে পারো।</div>`);
+}
+function tick(){
+  if(!player||!playerReady||!cur)return;
+  let st;try{st=player.getPlayerState()}catch{return}
+  if(st!==1){lastT=null;return}
+  const t=player.getCurrentTime(),rate=player.getPlaybackRate()||1;
+  if(lastT!=null){const d=t-lastT;if(d>0&&d<=rate*1.5+.6)credit(d)}
+  lastT=t;const p=P(cur.id);p.pos=t;p.last=Date.now();
+}
+function credit(d){
+  const id=cur.id,p=P(id),dur=durOf(id);
+  p.watched=dur?Math.min(dur,p.watched+d):p.watched+d;
+  const k=dayStr(0);D.log[k]=(D.log[k]||0)+d;
+  if(!p.done&&dur&&p.watched>=dur*.9){p.done=true;toast('✓ ভিডিও শেষ হিসেবে গোনা হলো');renderQueue()}
+  renderFocusMeta();save();
+}
+function setDone(id,v){P(id).done=v;if(v){const d=durOf(id);if(d)P(id).watched=Math.max(P(id).watched,d*.9)}save();renderFocusMeta();renderQueue()}
+function onEnded(){
+  const id=cur.id,p=P(id),d=durOf(id);
+  if(!p.done&&d&&p.watched>=d*.8)setDone(id,true);
+  p.pos=0;save();showEnd();
+}
+function nextId(){const l=curList();if(!l)return null;const i=l.videos.indexOf(cur.id);return i>=0&&i+1<l.videos.length?l.videos[i+1]:null}
+function prevId(){const l=curList();if(!l)return null;const i=l.videos.indexOf(cur.id);return i>0?l.videos[i-1]:null}
+function hideEnd(){clearInterval(endT);const e=$('endcard');e.hidden=true;e.innerHTML=''}
+function showEnd(custom){
+  clearInterval(endT);const e=$('endcard');e.hidden=false;
+  if(custom){e.innerHTML=custom;return}
+  const l=curList(),nx=nextId();
+  let h=`<div style="font-size:34px">${P(cur.id).done?'✅':'⏹'}</div><div><b>${esc(D.vids[cur.id].title)}</b></div>`;
+  if(!l)h+=`<div class="muted">এটা কোনো লিস্টে নেই।</div><button class="btn" data-act="replay">↺ আবার দেখো</button><button class="btn ghost" data-act="closeFocus">ফিডে ফিরে যাও</button>`;
+  else if(!nx)h+=`<div>🎉 লিস্টের শেষ ভিডিও!</div><div class="muted">${Math.round(listStats(l).pct*100)}% সম্পন্ন</div><button class="btn ghost" data-act="replay">↺ আবার দেখো</button><button class="btn" data-act="closeFocus">লিস্টে ফিরে যাও</button>`;
+  else{const i=l.videos.indexOf(nx),lk=isLocked(l,i);
+    h+=`<div class="muted">পরের ভিডিও:</div><div>${esc(D.vids[nx].title)}</div>`+(lk?`<div class="muted">🔒 এই ভিডিও শেষ না হলে পরেরটা খুলবে না।</div><button class="btn ghost" data-act="replay">↺ আবার দেখো</button><button class="btn ok" data-act="toggleDone">✓ শেষ চিহ্নিত করো</button>`:`<div id="cd" class="muted"></div><button class="btn" data-act="next">▶ এখনই চালাও</button><button class="btn ghost" data-act="cancelEnd">থামাও</button>`);
+    e.innerHTML=h;
+    if(!lk&&$('autoNext').checked){let n=5;const cd=$('cd');cd.textContent=n+' সেকেন্ডে চলবে…';endT=setInterval(()=>{n--;if(n<=0){clearInterval(endT);goNext()}else if($('cd'))$('cd').textContent=n+' সেকেন্ডে চলবে…'},1000)}
+    return}
+  e.innerHTML=h;
+}
+function goNext(){const nx=nextId();if(!nx){toast('এটাই শেষ ভিডিও');return}const l=curList();if(isLocked(l,l.videos.indexOf(nx))){toast('এই ভিডিও শেষ করলে পরেরটা খুলবে');return}openFocus(nx,l.id)}
+function goPrev(){const pv=prevId();if(!pv){toast('এটাই প্রথম ভিডিও');return}openFocus(pv,cur.listId)}
+function renderFocus(){renderFocusMeta();renderQueue();renderNotes()}
+function renderFocusMeta(){
+  if(!cur)return;const v=D.vids[cur.id],l=curList(),p=P(cur.id);
+  $('fTitle').textContent=l?l.name:'একক ভিডিও';
+  $('fVid').textContent=v.title;$('fCh').textContent=v.chTitle;
+  const b=$('doneBtn');b.classList.toggle('ok',!!p.done);b.classList.toggle('ghost',!p.done);b.textContent=p.done?'✓ শেষ (আবার খোলো)':'✓ দেখা শেষ';
+  $('fWatched').textContent=durOf(cur.id)?`দেখা হয়েছে ${fmtDur(p.watched)} / ${fmtDur(durOf(cur.id))}`:'';
+}
+function renderQueue(){
+  if(!cur)return;const l=curList();
+  if(!l){$('fListHead').innerHTML='';$('queue').innerHTML=`<p class="muted">এই ভিডিও কোনো ওয়াচলিস্টে নেই।</p><button class="btn sm" data-act="add" data-id="${cur.id}">＋ লিস্টে যোগ করো</button>`;return}
+  const s=listStats(l);
+  $('fListHead').innerHTML=`<b>${esc(l.name)}</b><div class="bar" style="margin:8px 0"><i style="width:${s.pct*100}%"></i></div><span class="muted">${Math.round(s.pct*100)}% · ${s.done}/${s.n} ভিডিও · বাকি ${fmtHM(s.remain)}</span>`;
+  $('queue').innerHTML=l.videos.map((id,i)=>{const v=D.vids[id];if(!v)return '';const lk=isLocked(l,i),dn=D.prog[id]&&D.prog[id].done,f=frac(id);
+    return `<div class="qi ${id===cur.id?'cur':''} ${lk?'lock':''}" data-act="qplay" data-id="${id}"><img alt="" src="${esc(v.thumb)}"><div><b>${esc(v.title)}</b><span class="muted">${lk?'🔒 ':dn?'✓ ':''}${v.dur?fmtDur(v.dur):''}${!dn&&f?' · '+Math.round(f*100)+'%':''}</span></div></div>`}).join('');
+}
+function renderNotes(){
+  if(!cur)return;const ns=(D.notes[cur.id]||[]).slice().sort((a,b)=>a.t-b.t);
+  $('notes').innerHTML=ns.length?ns.map(n=>`<div class="note"><a data-act="seek" data-t="${n.t}">${fmtDur(n.t)}</a><span>${esc(n.text)}</span><button class="ib" data-act="delNote" data-n="${n.id}">✕</button></div>`).join(''):'<p class="muted">কোনো নোট নেই। ভিডিও চলার সময় লিখলে টাইমস্ট্যাম্পসহ সেভ হবে, পরে ক্লিক করলে ঠিক ওই জায়গায় চলে যাবে।</p>';
+}
+function addNote(){
+  const t=$('noteIn').value.trim();if(!t||!cur)return;
+  let sec=0;try{if(player&&playerReady)sec=Math.floor(player.getCurrentTime())}catch{}
+  (D.notes[cur.id]||(D.notes[cur.id]=[])).push({id:nid(),t:sec,text:t,ts:Date.now()});
+  $('noteIn').value='';save();renderNotes();
+}
+
+/* ============ পোমোডোরো ============ */
+let pomo={mode:'focus',left:1500,run:false,t:null};
+function pomoDraw(){$('pomoTime').textContent=p2(Math.floor(pomo.left/60))+':'+p2(pomo.left%60);$('pomoMode').textContent=pomo.mode==='focus'?'ফোকাস':'বিরতি';$('pomoBtn').textContent=pomo.run?'⏸':'▶'}
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);g.gain.value=.15;o.frequency.value=880;o.start();o.stop(c.currentTime+.4)}catch{}}
+function pomoToggle(){
+  pomo.run=!pomo.run;clearInterval(pomo.t);
+  if(pomo.run)pomo.t=setInterval(()=>{pomo.left--;if(pomo.left<=0){beep();
+    if(pomo.mode==='focus'){pomo.mode='break';pomo.left=300;toast('☕ ৫ মিনিট বিরতি নাও');try{if(player&&playerReady)player.pauseVideo()}catch{}}
+    else{pomo.mode='focus';pomo.left=1500;toast('🎯 ফোকাস শুরু করো')}}
+    pomoDraw()},1000);
+  pomoDraw();
+}
+function pomoReset(){clearInterval(pomo.t);pomo={mode:'focus',left:1500,run:false,t:null};pomoDraw()}
+
+/* ============ ইভেন্ট ============ */
+const A={
+  menu:()=>$('side').classList.toggle('open'),
+  nav:el=>setView(el.dataset.view),
+  refresh:()=>loadAll(true),
+  signout:signOut,signin:startAuth,
+  saveId:()=>{const v=$('clientId').value.trim();if(!v.endsWith('.apps.googleusercontent.com'))return alert('Client ID ঠিক মনে হচ্ছে না।');try{localStorage.setItem('yt_client_id',v)}catch{}showScreen('login')},
+  changeId:()=>{$('clientId').value=getId();showScreen('setup')},
+  allCh:()=>{filter=null;chTab='videos';plView=null;showError('');renderChannels();renderFeed();$('side').classList.remove('open')},
+  pickCh:el=>{filter=el.dataset.id;chTab='videos';plView=null;showError('');renderChannels();renderFeed();$('side').classList.remove('open');window.scrollTo(0,0);loadChannelVideos(filter,false)},
+  chMore:()=>{if(plView)loadPlVideos(false);else if(filter)loadChannelVideos(filter,false)},
+  chAllLoad:()=>{if(plView)loadPlVideos(true);else if(filter)loadChannelVideos(filter,true)},
+  chTab:el=>{chTab=el.dataset.t;plView=null;showError('');renderFeed()},
+  openPl:el=>openPlaylist(el.dataset.id),
+  plBack:()=>{plView=null;renderFeed()},
+  plAddAll:()=>{if(!plView)return;dlg(`<h3>প্লেলিস্ট ওয়াচলিস্টে যোগ করো</h3><p class="muted">${esc(plView.title)} · শুধু তোমার সাবস্ক্রাইব করা চ্যানেলের ভিডিও যোগ হবে।</p>`+D.lists.map(l=>`<button class="btn ghost" style="display:block;width:100%;margin:6px 0;text-align:left" data-act="plAddTo" data-l="${l.id}">${esc(l.name)} (${l.videos.length})</button>`).join('')+`<div class="rowf"><input type="text" id="newListName" value="${esc(plView.title)}"><button class="btn" data-act="plAddNew">নতুন লিস্ট বানিয়ে যোগ করো</button></div>`)},
+  plAddTo:el=>{if(plView)importPlaylistId(plView.id,getList(el.dataset.l))},
+  plAddNew:()=>{const n=$('newListName').value.trim();if(!n||!plView)return;importPlaylistId(plView.id,createList(n))},
+  play:el=>openFocus(el.dataset.id,null),
+  playIn:el=>openFocus(el.dataset.id,el.dataset.l),
+  qplay:el=>openFocus(el.dataset.id,cur.listId),
+  add:el=>{const id=el.dataset.id,v=vmap.get(id)||D.vids[id];if(v&&!isSub(v.chId)){toast('শুধু সাবস্ক্রাইব করা চ্যানেলের ভিডিও লিস্টে যোগ করা যায়');return}openAddDlg(id)},
+  createAdd:el=>{const n=$('newListName').value.trim();if(!n)return;const l=createList(n);l.videos.push(el.dataset.id);save();openAddDlg(el.dataset.id);rerender();if(cur)renderQueue()},
+  newList:()=>askName('নতুন ওয়াচলিস্ট','','বানাও',n=>{createList(n);renderLists()}),
+  openList:el=>setView('list',el.dataset.id),
+  renameList:()=>{const l=getList(openListId);askName('নাম বদলাও',l.name,'সেভ',n=>{l.name=n;save();renderList()})},
+  delList:()=>{const l=getList(openListId);if(confirm('"'+l.name+'" লিস্টটা মুছে ফেলবে? (দেখার প্রোগ্রেস থেকে যাবে)')){D.lists=D.lists.filter(x=>x!==l);save();setView('lists')}},
+  continueList:()=>{const l=getList(openListId),id=nextUp(l);if(id)openFocus(id,l.id)},
+  doneIn:(el,e)=>{e.stopPropagation();const id=el.dataset.id;P(id).done?(P(id).done=false,P(id).watched=Math.min(P(id).watched,durOf(id)*.5)):setDone(id,true);save();renderList()},
+  up:(el,e)=>{e.stopPropagation();const l=getList(el.dataset.l),i=l.videos.indexOf(el.dataset.id);if(i>0){[l.videos[i-1],l.videos[i]]=[l.videos[i],l.videos[i-1]];save();renderList()}},
+  down:(el,e)=>{e.stopPropagation();const l=getList(el.dataset.l),i=l.videos.indexOf(el.dataset.id);if(i<l.videos.length-1){[l.videos[i+1],l.videos[i]]=[l.videos[i],l.videos[i+1]];save();renderList()}},
+  rmVid:(el,e)=>{e.stopPropagation();const l=getList(el.dataset.l);l.videos=l.videos.filter(x=>x!==el.dataset.id);save();renderList()},
+  importPl:()=>dlg(`<h3>YouTube প্লেলিস্ট ইমপোর্ট</h3><p class="muted">প্লেলিস্টের লিংক দাও। শুধু তোমার সাবস্ক্রাইব করা চ্যানেলের ভিডিওগুলোই যোগ হবে, বাকিগুলো বাদ যাবে।</p><div class="rowf"><input type="text" id="plUrl" placeholder="https://www.youtube.com/playlist?list=PL..."><button class="btn" id="plOk">ইমপোর্ট</button></div>`)||($('plOk').onclick=()=>importPlaylist($('plUrl').value.trim())),
+  closeDlg,
+  closeFocus,
+  pomoToggle,pomoReset,
+  prev:goPrev,next:goNext,
+  cancelEnd:hideEnd,
+  replay:()=>{hideEnd();try{player.seekTo(0,true);player.playVideo()}catch{}},
+  toggleDone:()=>{if(!cur)return;setDone(cur.id,!P(cur.id).done);if(!endT&&!$('endcard').hidden)showEnd()},
+  addNote,
+  seek:el=>{try{player.seekTo(+el.dataset.t,true);player.playVideo()}catch{}},
+  delNote:el=>{D.notes[cur.id]=(D.notes[cur.id]||[]).filter(n=>n.id!==el.dataset.n);save();renderNotes()},
+  export:()=>{const b=new Blob([JSON.stringify(D)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='focus-tube-backup-'+dayStr(0)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)},
+  import:()=>$('importFile').click()
+};
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');
+  if(el&&A[el.dataset.act]){e.stopPropagation&&0;A[el.dataset.act](el,e);return}
+  if(e.target.id==='dlg')closeDlg();
+});
+document.addEventListener('change',e=>{
+  const el=e.target.closest('[data-chg]');if(!el)return;
+  const k=el.dataset.chg;
+  if(k==='shorts'){D.hideShorts=el.checked;save();renderFeed()}
+  else if(k==='inlist'){const l=getList(el.dataset.l),id=el.dataset.id;if(el.checked){ensureMeta(id);if(!l.videos.includes(id))l.videos.push(id)}else l.videos=l.videos.filter(x=>x!==id);save();rerender();if(cur)renderQueue()}
+  else if(k==='ordered'){getList(openListId).ordered=el.checked;save();renderList()}
+  else if(k==='goal'){const v=Math.max(5,Math.min(600,+el.value||30));D.goalMin=v;save();renderStats()}
+});
+$('importFile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const j=JSON.parse(await f.text());if(!j||!Array.isArray(j.lists))throw 0;if(!confirm('বর্তমান সব ডেটা এই ব্যাকআপ দিয়ে বদলে যাবে। চালিয়ে যাবে?'))return;D=Object.assign(blank(),j);saveNow();$('hideShorts').checked=!!D.hideShorts;rerender();toast('ব্যাকআপ ফেরানো হয়েছে')}
+  catch{toast('ফাইলটা সঠিক ব্যাকআপ নয়')}
+};
+$('chSearch').oninput=renderChannels;
+$('vSearch').oninput=renderFeed;
+$('noteIn').addEventListener('keydown',e=>{if(e.key==='Enter')addNote();e.stopPropagation()});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(!$('dlg').hidden)closeDlg();else if(!$('focus').hidden)closeFocus()}
+  else if(e.key==='/'&&view==='feed'&&$('focus').hidden&&document.activeElement.tagName!=='INPUT'){e.preventDefault();$('vSearch').focus()}
+});
+window.addEventListener('beforeunload',()=>{if(D)saveNow()});
+window.addEventListener('resize',()=>{$('menuBtn').hidden=view!=='feed'||window.innerWidth>760});
+pomoDraw();init();
 </script>
 </body>
 </html>
