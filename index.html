@@ -23,6 +23,10 @@
   .btn.sm{padding:5px 10px;font-size:13px}
   .btn:disabled{opacity:.5;cursor:default}
   .btn.ghost.on{background:var(--accent);color:#fff}
+  .pickbar{position:sticky;top:60px;z-index:15;background:#173625;border:1px solid var(--ok);padding:10px 14px;border-radius:10px;display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .pickbar span{flex:1;min-width:200px}
+  .card.picked .thumb{outline:3px solid var(--ok);outline-offset:-3px}
+  span.addb{display:grid;place-items:center;pointer-events:none}
   .layout{display:flex;min-height:calc(100vh - 56px)}
   aside{width:270px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);padding:12px;overflow-y:auto;height:calc(100vh - 56px);position:sticky;top:56px}
   aside input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);margin-bottom:10px}
@@ -188,6 +192,7 @@
   <main>
     <div class="bar" id="barWrap" hidden><i id="bar" style="width:0"></i></div>
     <div id="msg"></div>
+    <div class="pickbar" id="pickBar" hidden></div>
     <div class="tools">
       <input type="text" id="vSearch" placeholder="ভিডিও খোঁজো…">
       <label class="muted"><input type="checkbox" id="hideShorts" data-chg="shorts"> শর্টস লুকাও</label>
@@ -348,7 +353,8 @@ function renderChannels(){
 }
 function cardHTML(v){
   const f=frac(v.id),inList=D.lists.some(l=>l.videos.includes(v.id));
-  return `<div class="card" data-act="play" data-id="${v.id}"><div class="thumb"><img loading="lazy" alt="" src="${esc(v.thumb)}">${v.dur?`<span class="dur">${fmtDur(v.dur)}</span>`:''}${isSub(v.chId)?`<button class="addb ${inList?'on':''}" data-act="add" data-id="${v.id}" title="ওয়াচলিস্টে যোগ করো">${inList?'✓':'＋'}</button>`:''}${f?`<div class="pbar"><i style="width:${f*100}%"></i></div>`:''}</div><h3>${esc(v.title)}</h3><p>${esc(v.chTitle)} · ${ago(v.date)}</p></div>`;
+  const tgt=pickTarget?getList(pickTarget):null,inT=!!(tgt&&tgt.videos.includes(v.id));
+  return `<div class="card ${inT?'picked':''}" data-act="play" data-id="${v.id}"><div class="thumb"><img loading="lazy" alt="" src="${esc(v.thumb)}">${v.dur?`<span class="dur">${fmtDur(v.dur)}</span>`:''}${isSub(v.chId)?(tgt?`<span class="addb ${inT?'on':''}">${inT?'✓':'＋'}</span>`:`<button class="addb ${inList?'on':''}" data-act="add" data-id="${v.id}" title="ওয়াচলিস্টে যোগ করো">${inList?'✓':'＋'}</button>`):''}${f?`<div class="pbar"><i style="width:${f*100}%"></i></div>`:''}</div><h3>${esc(v.title)}</h3><p>${esc(v.chTitle)} · ${ago(v.date)}</p></div>`;
 }
 /* একটা চ্যানেল সিলেক্ট করলে তার আপলোড প্লেলিস্ট থেকে ৫০টা করে ভিডিও লোড হয় */
 const chAll={};
@@ -386,6 +392,67 @@ function renderMore(){
   else if(st.done)b.innerHTML=`<span class="muted">✓ ${plView?'প্লেলিস্টের':'চ্যানেলের'} সব ${st.videos.length}টি ভিডিও লোড হয়েছে</span>`;
   else b.innerHTML=`<button class="btn ghost" data-act="chMore">আরও ৫০টি দেখাও</button><button class="btn ghost" data-act="chAllLoad">সব ভিডিও লোড করো</button><span class="muted">${st.videos.length}টি লোড হয়েছে</span>`;
 }
+/* ওয়াচলিস্টে ভিডিও যোগ: ফিড থেকে বেছে নেওয়া (pick mode) ও লিংক দিয়ে */
+let pickTarget=null;
+function renderPickBar(){
+  const b=$('pickBar'),l=pickTarget&&getList(pickTarget);
+  if(!l||view!=='feed'){b.hidden=true;b.innerHTML='';return}
+  b.hidden=false;
+  b.innerHTML=`<span>📌 <b>${esc(l.name)}</b> লিস্টে যোগ করছো · এখন ${l.videos.length}টি ভিডিও আছে<br><small class="muted">ভিডিওতে ক্লিক করলে যোগ হবে, আবার ক্লিক করলে সরে যাবে। চ্যানেল বা তার প্লেলিস্টে ঢুকেও বাছতে পারো।</small></span><button class="btn ok sm" data-act="pickDone">✓ শেষ করো</button>`;
+}
+function togglePick(id){
+  const l=getList(pickTarget);if(!l){pickTarget=null;renderFeed();return}
+  const v=vmap.get(id)||D.vids[id];
+  if(!v||!isSub(v.chId)){toast('শুধু সাবস্ক্রাইব করা চ্যানেলের ভিডিও যোগ করা যায়');return}
+  if(l.videos.includes(id))l.videos=l.videos.filter(x=>x!==id);
+  else{ensureMeta(id);l.videos.push(id)}
+  save();renderPickBar();
+  const el=document.querySelector('.card[data-id="'+id+'"]'),vv=vmap.get(id);
+  if(el&&vv){const t=document.createElement('div');t.innerHTML=cardHTML(vv);el.replaceWith(t.firstElementChild)}
+}
+function parseYT(s){
+  s=(s||'').trim();let vid=null,pid=null;
+  try{
+    const u=new URL(s),h=u.hostname.replace(/^www\.|^m\./,'');
+    if(h==='youtu.be')vid=u.pathname.slice(1).split('/')[0];
+    else if(h.endsWith('youtube.com')){
+      vid=u.searchParams.get('v');
+      const m=/^\/(?:shorts|embed|live)\/([\w-]{11})/.exec(u.pathname);if(!vid&&m)vid=m[1];
+    }
+    pid=u.searchParams.get('list');
+  }catch{
+    if(/^[\w-]{11}$/.test(s))vid=s;
+    else{const m=/(?:PL|UU|FL|OL|LL)[\w-]{10,}/.exec(s);if(m)pid=m[0]}
+  }
+  if(vid&&!/^[\w-]{11}$/.test(vid))vid=null;
+  return{vid,pid};
+}
+function handleLink(url){
+  const l=getList(openListId);if(!l)return;
+  const{vid,pid}=parseYT(url);
+  if(vid&&pid){
+    dlg(`<h3>কোনটা যোগ করবে?</h3><p class="muted">লিংকে ভিডিও আর প্লেলিস্ট দুটোই আছে।</p><div class="rowf" style="flex-direction:column"><button class="btn" data-act="lnkVideo" data-v="${esc(vid)}">শুধু এই ভিডিওটা</button><button class="btn ghost" data-act="lnkPl" data-p="${esc(pid)}">পুরো প্লেলিস্ট</button></div>`);
+    return;
+  }
+  if(vid)addVideoById(vid,l);
+  else if(pid)importPlaylistId(pid,l);
+  else toast('সঠিক ভিডিও বা প্লেলিস্ট লিংক দাও');
+}
+async function addVideoById(id,l){
+  if(!l)return;
+  if(l.videos.includes(id)){closeDlg();toast('এই ভিডিও লিস্টে আগেই আছে');return}
+  dlg('<h3>যোগ হচ্ছে…</h3><p class="muted">একটু অপেক্ষা করো।</p>');
+  try{
+    const d=await api('/videos',{part:'snippet,contentDetails',id});
+    const i=d.items&&d.items[0];
+    if(!i){closeDlg();toast('ভিডিও পাওয়া যায়নি (প্রাইভেট বা মোছা হতে পারে)');return}
+    if(!isSub(i.snippet.channelId)){closeDlg();toast('"'+i.snippet.channelTitle+'" চ্যানেল তুমি সাবস্ক্রাইব করোনি, তাই যোগ করা গেলো না');return}
+    const th=i.snippet.thumbnails||{};
+    if(!D.vids[id])D.vids[id]={id,title:i.snippet.title,chId:i.snippet.channelId,chTitle:i.snippet.channelTitle,thumb:((th.medium||th.high||th.default)||{}).url||('https://i.ytimg.com/vi/'+id+'/mqdefault.jpg'),dur:isoDur(i.contentDetails.duration),date:new Date(i.snippet.publishedAt).getTime()};
+    l.videos.push(id);save();closeDlg();rerender();toast('✓ ভিডিও যোগ হয়েছে');
+  }catch(e){closeDlg();toast('যোগ হয়নি: '+e.message)}
+}
+
 /* চ্যানেলের প্লেলিস্ট */
 const isSub=id=>subs.some(s=>s.id===id);
 let chTab='videos',plView=null;const chPl={};
@@ -445,7 +512,7 @@ function renderPlaylists(q){
   renderMore();
 }
 function renderFeed(){
-  renderTabs();
+  renderPickBar();renderTabs();
   const q=$('vSearch').value.trim().toLowerCase();
   if(filter&&chTab==='playlists'&&!plView){renderPlaylists(q);return}
   let list=(plView?plView.videos:(filter?chSource(filter):videos)).filter(v=>!q||v.title.toLowerCase().includes(q)||v.chTitle.toLowerCase().includes(q));
@@ -459,6 +526,7 @@ function renderFeed(){
 /* ============ ভিউ ============ */
 function setView(v,listId){
   view=v;if(listId!==undefined)openListId=listId;
+  if(v!=='feed')pickTarget=null;
   $('vFeed').hidden=v!=='feed';$('vLists').hidden=v!=='lists';$('vList').hidden=v!=='list';$('vStats').hidden=v!=='stats';
   $('menuBtn').hidden=v!=='feed'||window.innerWidth>760;
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===(v==='list'?'lists':v)));
@@ -479,7 +547,7 @@ function renderList(){
   $('vList').innerHTML=`<div class="pagehead"><button class="btn ghost sm" data-act="nav" data-view="lists">← সব লিস্ট</button><h2>${esc(l.name)}</h2><button class="btn ghost sm" data-act="renameList">নাম বদলাও</button><button class="btn ghost sm" data-act="delList">মুছে ফেলো</button></div>
   <div class="stat" style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div class="big">${Math.round(s.pct*100)}%</div><div style="flex:1;min-width:200px"><div class="bar" style="height:10px"><i style="width:${s.pct*100}%"></i></div><div class="muted" style="margin-top:6px">${s.done}/${s.n} ভিডিও শেষ · মোট ${fmtHM(s.tot)} · বাকি ${fmtHM(s.remain)}</div></div>
   <button class="btn" data-act="continueList" ${nu?'':'disabled'}>${s.done?'▶ চালিয়ে যাও':'▶ শুরু করো'}</button></div>
-  <div class="tools" style="margin:12px 0 0"><label class="muted"><input type="checkbox" data-chg="ordered" ${l.ordered?'checked':''}> ক্রমানুযায়ী দেখতে হবে (আগেরটা শেষ না হলে পরেরটা লক)</label><button class="btn ghost sm" data-act="importPl">YouTube প্লেলিস্ট ইমপোর্ট</button></div></div>`+(rows||`<div class="stat"><p>লিস্ট খালি।</p><p class="muted">ফিড থেকে ভিডিওর ওপরের ＋ চেপে যোগ করো, অথবা সাবস্ক্রাইব করা চ্যানেলের প্লেলিস্ট ইমপোর্ট করো।</p></div>`);
+  <div class="tools" style="margin:12px 0 0"><label class="muted"><input type="checkbox" data-chg="ordered" ${l.ordered?'checked':''}> ক্রমানুযায়ী দেখতে হবে (আগেরটা শেষ না হলে পরেরটা লক)</label><button class="btn sm" data-act="pickVideos">＋ ফিড থেকে ভিডিও যোগ করো</button><button class="btn ghost sm" data-act="importPl">🔗 লিংক দিয়ে যোগ করো</button></div></div>`+(rows||`<div class="stat"><p>লিস্ট খালি।</p><p class="muted">ওপরের "ফিড থেকে ভিডিও যোগ করো" চেপে ভিডিওতে ক্লিক করো, অথবা "লিংক দিয়ে যোগ করো" তে ভিডিও বা প্লেলিস্টের লিংক দাও।</p></div>`);
 }
 
 /* ============ স্ট্যাটস ============ */
@@ -674,7 +742,11 @@ const A={
   plAddAll:()=>{if(!plView)return;dlg(`<h3>প্লেলিস্ট ওয়াচলিস্টে যোগ করো</h3><p class="muted">${esc(plView.title)} · শুধু তোমার সাবস্ক্রাইব করা চ্যানেলের ভিডিও যোগ হবে।</p>`+D.lists.map(l=>`<button class="btn ghost" style="display:block;width:100%;margin:6px 0;text-align:left" data-act="plAddTo" data-l="${l.id}">${esc(l.name)} (${l.videos.length})</button>`).join('')+`<div class="rowf"><input type="text" id="newListName" value="${esc(plView.title)}"><button class="btn" data-act="plAddNew">নতুন লিস্ট বানিয়ে যোগ করো</button></div>`)},
   plAddTo:el=>{if(plView)importPlaylistId(plView.id,getList(el.dataset.l))},
   plAddNew:()=>{const n=$('newListName').value.trim();if(!n||!plView)return;importPlaylistId(plView.id,createList(n))},
-  play:el=>openFocus(el.dataset.id,null),
+  play:el=>{if(pickTarget){togglePick(el.dataset.id);return}openFocus(el.dataset.id,null)},
+  pickVideos:()=>{if(!getList(openListId))return;pickTarget=openListId;filter=null;chTab='videos';plView=null;showError('');renderChannels();setView('feed')},
+  pickDone:()=>{const id=pickTarget;pickTarget=null;setView('list',id)},
+  lnkVideo:el=>addVideoById(el.dataset.v,getList(openListId)),
+  lnkPl:el=>importPlaylistId(el.dataset.p,getList(openListId)),
   playIn:el=>openFocus(el.dataset.id,el.dataset.l),
   qplay:el=>openFocus(el.dataset.id,cur.listId),
   add:el=>{const id=el.dataset.id,v=vmap.get(id)||D.vids[id];if(v&&!isSub(v.chId)){toast('শুধু সাবস্ক্রাইব করা চ্যানেলের ভিডিও লিস্টে যোগ করা যায়');return}openAddDlg(id)},
@@ -688,7 +760,7 @@ const A={
   up:(el,e)=>{e.stopPropagation();const l=getList(el.dataset.l),i=l.videos.indexOf(el.dataset.id);if(i>0){[l.videos[i-1],l.videos[i]]=[l.videos[i],l.videos[i-1]];save();renderList()}},
   down:(el,e)=>{e.stopPropagation();const l=getList(el.dataset.l),i=l.videos.indexOf(el.dataset.id);if(i<l.videos.length-1){[l.videos[i+1],l.videos[i]]=[l.videos[i],l.videos[i+1]];save();renderList()}},
   rmVid:(el,e)=>{e.stopPropagation();const l=getList(el.dataset.l);l.videos=l.videos.filter(x=>x!==el.dataset.id);save();renderList()},
-  importPl:()=>dlg(`<h3>YouTube প্লেলিস্ট ইমপোর্ট</h3><p class="muted">প্লেলিস্টের লিংক দাও। শুধু তোমার সাবস্ক্রাইব করা চ্যানেলের ভিডিওগুলোই যোগ হবে, বাকিগুলো বাদ যাবে।</p><div class="rowf"><input type="text" id="plUrl" placeholder="https://www.youtube.com/playlist?list=PL..."><button class="btn" id="plOk">ইমপোর্ট</button></div>`)||($('plOk').onclick=()=>importPlaylist($('plUrl').value.trim())),
+  importPl:()=>{dlg(`<h3>লিংক দিয়ে যোগ করো</h3><p class="muted">ভিডিও বা প্লেলিস্টের লিংক পেস্ট করো। শুধু তোমার সাবস্ক্রাইব করা চ্যানেলের ভিডিও যোগ হবে, বাকিগুলো বাদ যাবে।</p><div class="rowf"><input type="text" id="plUrl" placeholder="https://www.youtube.com/watch?v=… বা playlist?list=…"><button class="btn" id="plOk">যোগ করো</button></div>`);const go=()=>handleLink($('plUrl').value);$('plOk').onclick=go;$('plUrl').onkeydown=e=>{if(e.key==='Enter')go()}},
   closeDlg,
   closeFocus,
   pomoToggle,pomoReset,
