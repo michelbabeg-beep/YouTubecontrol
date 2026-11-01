@@ -261,7 +261,10 @@ function closeDlg(){$('dlg').hidden=true;$('dlgBody').innerHTML=''}
 
 /* ============ স্টেট ও ডেটা (ব্রাউজারে সেভ) ============ */
 let token=null,tokenClient=null,uid='default',subs=[],videos=[],vmap=new Map(),filter=null,view='feed',openListId=null,D=null;
-const getId=()=>{try{return localStorage.getItem('yt_client_id')||''}catch{return ''}};
+/* ★ এখানে নিজের Client ID একবার বসাও (যেমন '407715785290-xxxx.apps.googleusercontent.com')।
+   বসানো থাকলে ইউজারদের আর কোনো সেটআপ করতে হবে না, শুধু "Google দিয়ে লগইন" চাপলেই হবে। */
+const CLIENT_ID='407715785290-r6q8o82p1ikokl5dhv6rtb5mbgtcvia1.apps.googleusercontent.com';
+const getId=()=>CLIENT_ID||(()=>{try{return localStorage.getItem('yt_client_id')||''}catch{return ''}})();
 const blank=()=>({lists:[],vids:{},prog:{},notes:{},log:{},goalMin:30,hideShorts:false});
 function loadData(){try{D=Object.assign(blank(),JSON.parse(localStorage.getItem('ytf_data_'+uid)||'{}'))}catch{D=blank()}}
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(saveNow,400)}
@@ -279,6 +282,7 @@ function nextUp(l){for(let i=0;i<l.videos.length;i++){if(!(D.prog[l.videos[i]]&&
 $('origin').textContent=location.origin;
 function showScreen(w){['setup','login'].forEach(k=>$(k).hidden=k!==w);const app=w==='app';$('nav').hidden=!app;$('refreshBtn').hidden=!app;$('signOutBtn').hidden=!app;if(!app){['vFeed','vLists','vList','vStats'].forEach(k=>$(k).hidden=true)}}
 function init(){
+  if(CLIENT_ID){const b=document.querySelector('[data-act=changeId]');if(b&&b.parentElement)b.parentElement.hidden=true}
   if(location.protocol==='file:')$('setup').insertAdjacentHTML('afterbegin','<div class="err">ফাইল সরাসরি ডাবল-ক্লিকে খুললে লগইন কাজ করবে না। লোকালহোস্ট বা হোস্টিং থেকে চালাও।</div>');
   showScreen(getId()?'login':'setup');
 }
