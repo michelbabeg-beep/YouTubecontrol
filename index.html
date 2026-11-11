@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ফোকাস টিউব</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#18181d">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <style>
   :root{--bg:#0f0f12;--panel:#18181d;--panel2:#212128;--text:#f2f2f5;--muted:#9a9aa8;--accent:#ff3d3d;--ok:#32c46b;--line:#2b2b33}
   *{box-sizing:border-box}
@@ -281,27 +285,82 @@ function nextUp(l){for(let i=0;i<l.videos.length;i++){if(!(D.prog[l.videos[i]]&&
 /* ============ লগইন ============ */
 $('origin').textContent=location.origin;
 function showScreen(w){['setup','login'].forEach(k=>$(k).hidden=k!==w);const app=w==='app';$('nav').hidden=!app;$('refreshBtn').hidden=!app;$('signOutBtn').hidden=!app;if(!app){['vFeed','vLists','vList','vStats'].forEach(k=>$(k).hidden=true)}}
-function init(){
+const TK='ytf_token',WASIN='ytf_was_in';
+let tokenExp=0,refreshT=null,appStarted=false,tokenCb=null;
+function saveToken(){try{localStorage.setItem(TK,JSON.stringify({t:token,exp:tokenExp,uid}));localStorage.setItem(WASIN,'1')}catch{}}
+function readToken(){try{const j=JSON.parse(localStorage.getItem(TK)||'null');if(j&&j.t&&j.exp>Date.now()+60000)return j}catch{}return null}
+function clearToken(){try{localStorage.removeItem(TK)}catch{}}
+function waitGoogle(ms=10000){return new Promise(res=>{const t0=Date.now();(function c(){if(window.google&&google.accounts&&google.accounts.oauth2)return res(true);if(Date.now()-t0>ms)return res(false);setTimeout(c,150)})()})}
+function ensureClient(){
+  if(tokenClient)return true;
+  if(!window.google||!google.accounts||!google.accounts.oauth2)return false;
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:getId(),scope:SCOPE,callback:onToken,error_callback:()=>{if(tokenCb)tokenCb(false)}});
+  return true;
+}
+function onToken(r){
+  if(r.error){if(tokenCb){tokenCb(false);return}alert('লগইন হয়নি: '+r.error);return}
+  token=r.access_token;tokenExp=Date.now()+(+r.expires_in||3600)*1000;
+  saveToken();scheduleRefresh();
+  if(tokenCb)tokenCb(true);
+  if(!appStarted)enterApp(false);
+}
+/* চুপচাপ নতুন টোকেন নেওয়া (পপআপ ছাড়া) */
+function silentRefresh(){
+  return new Promise(async res=>{
+    if(!getId()||!(await waitGoogle())||!ensureClient())return res(false);
+    let fin=false;const done=ok=>{if(fin)return;fin=true;tokenCb=null;clearTimeout(to);res(ok)};
+    const to=setTimeout(()=>done(false),12000);
+    tokenCb=done;
+    try{tokenClient.requestAccessToken({prompt:'none'})}catch{done(false)}
+  });
+}
+function scheduleRefresh(){
+  clearTimeout(refreshT);
+  const ms=Math.max(5000,tokenExp-Date.now()-5*60000);
+  refreshT=setTimeout(async()=>{const ok=await silentRefresh();if(!ok)scheduleRetry()},ms);
+}
+function scheduleRetry(){clearTimeout(refreshT);refreshT=setTimeout(async()=>{if(!token)return;const ok=await silentRefresh();if(!ok)scheduleRetry()},60000)}
+async function enterApp(known){
+  appStarted=true;showScreen('app');
+  if(!known){try{const d=await api('/channels',{part:'id',mine:'true'});uid=(d.items&&d.items[0]&&d.items[0].id)||'default'}catch{uid='default'}}
+  saveToken();
+  loadData();$('hideShorts').checked=!!D.hideShorts;setView('feed');loadAll(false);
+}
+async function init(){
   if(CLIENT_ID){const b=document.querySelector('[data-act=changeId]');if(b&&b.parentElement)b.parentElement.hidden=true}
   if(location.protocol==='file:')$('setup').insertAdjacentHTML('afterbegin','<div class="err">ফাইল সরাসরি ডাবল-ক্লিকে খুললে লগইন কাজ করবে না। লোকালহোস্ট বা হোস্টিং থেকে চালাও।</div>');
-  showScreen(getId()?'login':'setup');
+  if(!getId()){showScreen('setup');return}
+  /* আগের লগইন থাকলে সরাসরি ঢুকে যাও */
+  const saved=readToken();
+  if(saved){token=saved.t;tokenExp=saved.exp;uid=saved.uid||'default';scheduleRefresh();enterApp(true);return}
+  showScreen('login');
+  /* টোকেনের মেয়াদ শেষ হলেও আগে লগইন করা থাকলে চুপচাপ নতুন টোকেন আনো */
+  let was='';try{was=localStorage.getItem(WASIN)||''}catch{}
+  if(was==='1'){
+    const ok=await silentRefresh();
+    if(ok&&!appStarted)enterApp(false);
+  }
 }
 function startAuth(){
   if(!window.google||!google.accounts){alert('Google স্ক্রিপ্ট লোড হয়নি, ইন্টারনেট চেক করে আবার চেষ্টা করো।');return}
-  tokenClient=google.accounts.oauth2.initTokenClient({client_id:getId(),scope:SCOPE,callback:async r=>{
-    if(r.error){alert('লগইন হয়নি: '+r.error);return}
-    token=r.access_token;showScreen('app');
-    try{const d=await api('/channels',{part:'id',mine:'true'});uid=(d.items&&d.items[0]&&d.items[0].id)||'default'}catch{uid='default'}
-    loadData();$('hideShorts').checked=!!D.hideShorts;setView('feed');loadAll(false);
-  }});
+  tokenCb=null;
+  if(!ensureClient())return;
   tokenClient.requestAccessToken();
 }
-function signOut(){if(token&&window.google)google.accounts.oauth2.revoke(token,()=>{});token=null;subs=[];videos=[];showScreen('login')}
+function softLogout(){token=null;clearToken();clearTimeout(refreshT);appStarted=false;subs=[];videos=[];showScreen('login')}
+function signOut(){
+  if(token&&window.google&&google.accounts)google.accounts.oauth2.revoke(token,()=>{});
+  try{localStorage.removeItem(WASIN)}catch{}
+  softLogout();
+}
 
 async function api(path,params){
   const u=new URL(API+path);Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
-  const r=await fetch(u,{headers:{Authorization:'Bearer '+token}});
-  if(r.status===401){signOut();throw new Error('সেশন শেষ হয়ে গেছে, আবার লগইন করো।')}
+  let r=await fetch(u,{headers:{Authorization:'Bearer '+token}});
+  if(r.status===401){
+    if(await silentRefresh())r=await fetch(u,{headers:{Authorization:'Bearer '+token}});
+    if(r.status===401){softLogout();throw new Error('সেশন শেষ হয়ে গেছে, আবার লগইন করো।')}
+  }
   if(!r.ok){const e=await r.json().catch(()=>({}));const er=new Error(e.error&&e.error.message?e.error.message:'HTTP '+r.status);er.status=r.status;throw er}
   return r.json();
 }
@@ -805,6 +864,8 @@ document.addEventListener('keydown',e=>{
 });
 window.addEventListener('beforeunload',()=>{if(D)saveNow()});
 window.addEventListener('resize',()=>{$('menuBtn').hidden=view!=='feed'||window.innerWidth>760});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&token&&tokenExp-Date.now()<6*60000)silentRefresh().then(ok=>{if(!ok)scheduleRetry()})});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 pomoDraw();init();
 </script>
 </body>
